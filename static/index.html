@@ -940,101 +940,45 @@
       }
     }
 
-    // Spoken Radio Transmission Synthesizer with Live Audio Waveforms & Squelch
-    function speakRadioTransmission(speaker, text, callback) {
-      playRadioSquelch();
-
-      // Show partial interim text streaming into partial turn box
-      const partialBox = document.getElementById('partial-turn-box');
-      if (partialBox) {
-        partialBox.innerHTML = `<span class="text-cyan-400 font-bold uppercase tracking-wider text-[10px]">${speaker}:</span> <span class="text-cyan-200">"${text}"</span>`;
-      }
-
-      let completed = false;
-      const finish = () => {
-        if (completed) return;
-        completed = true;
-        playRadioSquelch();
-        if (partialBox) {
-          partialBox.innerHTML = '<span class="text-slate-600">Awaiting voice transmission...</span>';
-        }
-        addTranscriptMessage(speaker, text, 'AssemblyAI_Streaming');
-        if (callback) setTimeout(callback, 200);
-      };
-
-      // Web Speech API Voice Synthesis
-      if ('speechSynthesis' in window) {
-        try {
-          window.speechSynthesis.cancel();
-          const utterance = new SpeechSynthesisUtterance(text);
-          
-          // Differentiate Voices: Tower/ATC vs Pilot/Driver
-          if (speaker.includes('TOWER') || speaker.includes('ATC')) {
-            utterance.rate = 1.05;
-            utterance.pitch = 0.95;
-          } else {
-            utterance.rate = 1.15;
-            utterance.pitch = 1.15;
-          }
-
-          utterance.onend = finish;
-          utterance.onerror = finish;
-
-          // Estimated duration fallback (ensures headless browsers and autoplay-blocked tabs never hang)
-          const fallbackTimeoutMs = Math.max(900, Math.min(text.length * 45, 2500));
-          setTimeout(finish, fallbackTimeoutMs);
-
-          window.speechSynthesis.speak(utterance);
-        } catch (e) {
-          finish();
-        }
-      } else {
-        finish();
-      }
-    }
-
     function runClientSideSimulation() {
       updateStateBadge('VALIDATING');
       const rwy = currentScenario === 'RJTT_HANEDA_2024' ? '34R' : '09L';
       const isHaneda = currentScenario === 'RJTT_HANEDA_2024';
       
-      const towerSpeaker = isHaneda ? 'TOKYO_TOWER' : 'ATC_GROUND';
-      const towerText = isHaneda 
-        ? 'JA722A, taxi to holding point C5, hold short of Runway 34R, number 1.' 
-        : 'Tug 42, taxi south via Echo, hold short of Runway 09L, traffic on final.';
+      addTranscriptMessage(
+        isHaneda ? 'TOKYO_TOWER' : 'ATC_GROUND',
+        isHaneda ? 'JA722A, taxi to holding point C5, hold short of Runway 34R, number 1.' : 'Tug 42, taxi south via Echo, hold short of Runway 09L, traffic on final.',
+        'AssemblyAI_Streaming'
+      );
 
-      const pilotSpeaker = isHaneda ? 'JA722A_PILOT' : 'TUG_42_DRIVER';
-      const pilotText = isHaneda 
-        ? 'Taxi to holding point C5, JA722A.' 
-        : 'Taxi south via Echo, hold short 09L, Tug 42.';
+      setTimeout(() => {
+        addTranscriptMessage(
+          isHaneda ? 'JA722A_PILOT' : 'TUG_42_DRIVER',
+          isHaneda ? 'Taxi to holding point C5, JA722A.' : 'Taxi south via Echo, hold short 09L, Tug 42.',
+          'AssemblyAI_Streaming'
+        );
 
-      // Step 1: Tokyo Tower / ATC speaks aloud over radio
-      speakRadioTransmission(towerSpeaker, towerText, () => {
-        // Step 2: Pilot / Driver reads back aloud over radio
-        speakRadioTransmission(pilotSpeaker, pilotText, () => {
-          // Step 3: Aircraft rolls forward across hold line
-          let moves = 0;
-          const driveInterval = setInterval(() => {
-            moves++;
-            vehicle.y -= 25;
-            vehicle.speed = 14;
-            updateTelemetryDisplay();
+        let moves = 0;
+        const driveInterval = setInterval(() => {
+          moves++;
+          vehicle.y -= 25;
+          vehicle.speed = 14;
+          updateTelemetryDisplay();
 
-            if (vehicle.y <= 330) {
-              clearInterval(driveInterval);
-              triggerVisualIncursionAlert({
-                alert_id: 'ALT-CRIT-' + Date.now(),
-                severity: 'CRITICAL_INCURSION',
-                vehicle_id: vehicle.id,
-                runway_id: rwy,
-                speech_directive: `PULL UP! HOLD POSITION! RUNWAY ${rwy} INCURSION! TRAFFIC ON FINAL!`,
-                time_to_impact_sec: 14.2
-              });
-              updateStateBadge('INTERRUPTED');
-            }
-          }, 350);
-        });
-      });
+          if (vehicle.y <= 330) {
+            clearInterval(driveInterval);
+            triggerVisualIncursionAlert({
+              alert_id: 'ALT-CRIT-' + Date.now(),
+              severity: 'CRITICAL_INCURSION',
+              vehicle_id: vehicle.id,
+              runway_id: rwy,
+              speech_directive: `PULL UP! HOLD POSITION! RUNWAY ${rwy} INCURSION! TRAFFIC ON FINAL!`,
+              time_to_impact_sec: 14.2
+            });
+            updateStateBadge('INTERRUPTED');
+          }
+        }, 350);
+      }, 900);
     }
 
     // ICAO Readback Deviation Test
@@ -1045,18 +989,15 @@
         const data = await resp.json();
         console.log('Readback test response:', data);
       } catch (e) {
-        console.log('Executing Client-Side Readback Test (Spoken Audio Mode)...');
-        const atcText = 'Tug 42, taxi via Echo, hold short of Runway 09L.';
-        const driverText = 'Taxi via Echo, cross Runway 09L, Tug 42.';
-
-        speakRadioTransmission('ATC_GROUND', atcText, () => {
-          speakRadioTransmission('TUG_42_DRIVER', driverText, () => {
-            triggerReadbackAlert({
-              directive: 'READBACK ERROR! HOLD SHORT REQUIRED! CROSSING NOT PERMITTED!',
-              deviations: ['CRITICAL_CLEARANCE_INVERSION: ATC instructed HOLD SHORT, but readback stated CROSS/LINE UP.']
-            });
+        console.log('Executing Client-Side Readback Test (GitHub Pages Mode)...');
+        addTranscriptMessage('ATC_GROUND', 'Tug 42, taxi via Echo, hold short of Runway 09L.', 'AssemblyAI_Streaming');
+        setTimeout(() => {
+          addTranscriptMessage('TUG_42_DRIVER', 'Taxi via Echo, cross Runway 09L, Tug 42.', 'AssemblyAI_Streaming');
+          triggerReadbackAlert({
+            directive: 'READBACK ERROR! HOLD SHORT REQUIRED! CROSSING NOT PERMITTED!',
+            deviations: ['CRITICAL_CLEARANCE_INVERSION: ATC instructed HOLD SHORT, but readback stated CROSS/LINE UP.']
           });
-        });
+        }, 800);
       }
     }
 

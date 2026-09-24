@@ -107,8 +107,9 @@ def run_e2e_ui_tests():
         rb_buttons = driver.find_elements(By.XPATH, "//button[contains(., 'Readback Test')]")
         if rb_buttons:
             rb_buttons[0].click()
-            rb_banner = wait.until(lambda d: d.find_element(By.ID, "readback-banner"))
-            wait.until(lambda d: "hidden" not in rb_banner.get_attribute("class"))
+            time.sleep(1.0)
+            rb_banner = driver.find_element(By.ID, "readback-banner")
+            assert "hidden" not in rb_banner.get_attribute("class")
             rb_text = driver.find_element(By.ID, "readback-text").text
             print(f"  [OK] Readback Deviation Alert Triggered: '{rb_text}'")
             results.append(("ICAO Readback Deviation Engine", "PASSED"))
