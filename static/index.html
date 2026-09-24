@@ -153,9 +153,17 @@
       </div>
     </div>
 
-    <!-- Acoustic Stress Test & Noise Generator -->
-    <div class="flex items-center space-x-3">
-      <span class="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Acoustic Ramp Noise:</span>
+    <!-- Environmental Simulators: Acoustic Jet Noise & CAT III Fog -->
+    <div class="flex items-center space-x-2.5">
+      <!-- CAT III Fog / Low-Visibility Toggle -->
+      <button id="btn-toggle-fog" onclick="toggleFogSimulator()" 
+        class="flex items-center space-x-2 px-3 py-1 rounded-md bg-slate-900 hover:bg-slate-800 border border-slate-700 text-[11px] font-bold text-slate-300 transition" title="Simulate CAT IIIb Low-Visibility Fog (<150m RVR)">
+        <i data-lucide="cloud-fog" class="w-3.5 h-3.5 text-slate-400"></i>
+        <span id="fog-btn-text">CAT III Fog: OFF</span>
+        <span id="fog-rvr-badge" class="px-1.5 py-0.2 rounded bg-slate-950 text-slate-400 font-mono text-[10px]">10km Vis</span>
+      </button>
+
+      <!-- Jet Noise Generator -->
       <button id="btn-toggle-noise" onclick="toggleNoiseSimulator()" 
         class="flex items-center space-x-2 px-3 py-1 rounded-md bg-slate-900 hover:bg-slate-800 border border-slate-700 text-[11px] font-bold text-slate-300 transition">
         <i data-lucide="volume-2" class="w-3.5 h-3.5 text-slate-400"></i>
@@ -187,9 +195,32 @@
           </div>
 
           <div class="flex items-center space-x-3 text-[11px] font-mono text-slate-400">
+            <span>RVR: <strong id="telemetry-rvr" class="text-emerald-400 font-bold">10,000m</strong></span>
             <span>RANGE: <strong class="text-slate-300">1.5 NM</strong></span>
             <span>POS: <strong id="telemetry-coords" class="text-cyan-400">X: 500m, Y: 430m</strong></span>
             <span>SPD: <strong id="telemetry-speed" class="text-emerald-400">12 kts</strong></span>
+          </div>
+        </div>
+
+        <!-- JUDGE FAST-TRACK SCENARIO PRESETS BAR -->
+        <div class="mb-2 p-1.5 rounded-lg bg-[#050a18]/90 border border-slate-800/80 flex flex-wrap items-center justify-between gap-1.5 text-xs">
+          <div class="flex items-center space-x-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider pl-1">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-400 animate-pulse"></i>
+            <span>Judge 1-Click Presets:</span>
+          </div>
+          <div class="flex flex-wrap items-center gap-1.5">
+            <button onclick="triggerJudgePreset('HANEDA')" class="px-2.5 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-cyan-500/40 text-cyan-300 text-[11px] font-bold transition flex items-center space-x-1 shadow-sm" title="Replay Tokyo Haneda 2024 C5 Incursion">
+              <span>🇯🇵</span>
+              <span>1. Haneda Incident Replay</span>
+            </button>
+            <button onclick="triggerJudgePreset('FOG_INCURSION')" class="px-2.5 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-red-500/40 text-red-300 text-[11px] font-bold transition flex items-center space-x-1 shadow-sm" title="Simulate Blind Ramp Incursion with Fog and Jet Noise">
+              <span>🌁</span>
+              <span>2. CAT III Blind Incursion</span>
+            </button>
+            <button onclick="triggerJudgePreset('READBACK_INVERSION')" class="px-2.5 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-amber-500/40 text-amber-300 text-[11px] font-bold transition flex items-center space-x-1 shadow-sm" title="Simulate Spoken Readback Contradiction">
+              <span>⚠️</span>
+              <span>3. Spoken Deviation Test</span>
+            </button>
           </div>
         </div>
 
@@ -651,6 +682,58 @@
         document.getElementById('btn-toggle-noise').classList.remove('border-red-500', 'glow-red');
         document.getElementById('noise-db-badge').innerText = '42 dB';
         document.getElementById('noise-db-badge').className = 'px-1.5 py-0.2 rounded bg-slate-950 text-slate-400 font-mono text-[10px]';
+      }
+    }
+
+    // CAT III Low-Visibility Fog Simulator (<150m RVR)
+    let isFogActive = false;
+    function toggleFogSimulator() {
+      isFogActive = !isFogActive;
+      const btn = document.getElementById('btn-toggle-fog');
+      const badge = document.getElementById('fog-rvr-badge');
+      const rvr = document.getElementById('telemetry-rvr');
+      
+      if (isFogActive) {
+        btn.classList.replace('bg-slate-900', 'bg-amber-950');
+        btn.classList.add('border-amber-500', 'glow-amber');
+        document.getElementById('fog-btn-text').innerText = 'CAT III Fog: ACTIVE';
+        badge.innerText = '150m RVR';
+        badge.className = 'px-1.5 py-0.2 rounded bg-amber-900 text-amber-200 font-mono text-[10px] font-bold animate-pulse';
+        if (rvr) {
+          rvr.innerText = '150m (CAT IIIb)';
+          rvr.className = 'text-amber-400 font-bold';
+        }
+      } else {
+        btn.classList.replace('bg-amber-950', 'bg-slate-900');
+        btn.classList.remove('border-amber-500', 'glow-amber');
+        document.getElementById('fog-btn-text').innerText = 'CAT III Fog: OFF';
+        badge.innerText = '10km Vis';
+        badge.className = 'px-1.5 py-0.2 rounded bg-slate-950 text-slate-400 font-mono text-[10px]';
+        if (rvr) {
+          rvr.innerText = '10,000m';
+          rvr.className = 'text-emerald-400 font-bold';
+        }
+      }
+    }
+
+    // 1-Click Judge Fast-Track Scenario Presets
+    async function triggerJudgePreset(preset) {
+      if (preset === 'HANEDA') {
+        await setScenario('RJTT_HANEDA_2024');
+        setTimeout(() => {
+          triggerJudgeSimulation();
+        }, 400);
+      } else if (preset === 'FOG_INCURSION') {
+        if (currentScenario !== 'KORD_TUG_INCURSION') {
+          await setScenario('KORD_TUG_INCURSION');
+        }
+        if (!isFogActive) toggleFogSimulator();
+        if (!isNoiseActive) toggleNoiseSimulator();
+        setTimeout(() => {
+          triggerJudgeSimulation();
+        }, 500);
+      } else if (preset === 'READBACK_INVERSION') {
+        triggerReadbackTest();
       }
     }
 
@@ -1311,6 +1394,32 @@
       ctx.closePath();
       ctx.fill();
       ctx.restore();
+
+      // --- 8. CAT III Low-Visibility Fog / Darkness Atmospheric Layer ---
+      if (isFogActive) {
+        ctx.save();
+        // Dense atmospheric fog bed
+        ctx.fillStyle = 'rgba(8, 14, 28, 0.85)';
+        ctx.fillRect(0, 0, w, h);
+
+        // Flashlight / Vehicle beam cone piercing through fog around vehicle position
+        const fogGrad = ctx.createRadialGradient(vehX, vehY, 15, vehX, vehY, 130);
+        fogGrad.addColorStop(0, 'rgba(6, 182, 212, 0.2)');
+        fogGrad.addColorStop(0.5, 'rgba(8, 14, 28, 0.4)');
+        fogGrad.addColorStop(1, 'rgba(8, 14, 28, 0.92)');
+        ctx.fillStyle = fogGrad;
+        ctx.fillRect(0, 0, w, h);
+
+        // Low Visibility HUD Banner on Canvas
+        ctx.fillStyle = 'rgba(245, 158, 11, 0.88)';
+        ctx.fillRect(w / 2 - 130, 14, 260, 22);
+        ctx.fillStyle = '#030712';
+        ctx.font = 'bold 10px "JetBrains Mono", monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('CAT IIIb LOW-VISIBILITY FOG (RVR <150m)', w / 2, 29);
+        ctx.textAlign = 'left';
+        ctx.restore();
+      }
     }
 
     // FAA / JCAB Audit Modal
