@@ -2,11 +2,15 @@
 ### Real-Time Autonomous Airfield Ground Collision & Runway Incursion Interceptor
 **Built for the AssemblyAI Voice Agent Hackathon on Lablab.ai**
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-brightgreen)](https://psraghothamrao8.github.io/aeroguard/)
 [![Tests](https://img.shields.io/badge/pytest-13%20passed%20%7C%20100%25-emerald)](file:///c:/Users/Admin/Documents/assembly_ai/test_system.py)
 [![AssemblyAI](https://img.shields.io/badge/AssemblyAI-Streaming%20v3%20STT%20%2B%20LLM%20Gateway-cyan)](https://www.assemblyai.com)
 [![FastAPI](https://img.shields.io/badge/FastAPI-Production%20Ready-009688)](https://fastapi.tiangolo.com)
 [![FAA Compliance](https://img.shields.io/badge/FAA-14%20CFR%20Part%20139.329-amber)](https://www.faa.gov)
 [![ICAO Compliance](https://img.shields.io/badge/ICAO-Annex%2014%20Aerodromes-blue)](https://www.icao.int)
+
+🌐 **Live Interactive Application:** [https://psraghothamrao8.github.io/aeroguard/](https://psraghothamrao8.github.io/aeroguard/)
+📂 **GitHub Repository:** [https://github.com/psraghothamrao8/aeroguard](https://github.com/psraghothamrao8/aeroguard)
 
 ---
 
