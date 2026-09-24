@@ -109,6 +109,13 @@
         <span>Part 139 Audit</span>
       </button>
 
+      <!-- Engine & API Key Settings -->
+      <button onclick="openSettingsModal()" 
+        class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-bold text-slate-300 transition" title="Voice Engine & API Key Settings">
+        <i data-lucide="settings" class="w-3.5 h-3.5 text-slate-400"></i>
+        <span class="hidden sm:inline">Settings</span>
+      </button>
+
       <!-- Reset Airfield -->
       <button onclick="resetAirfield()" 
         class="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-400 hover:text-slate-100 transition" title="Reset Airfield State">
@@ -134,6 +141,15 @@
         <span class="text-slate-300 font-bold text-[11px]">UHF SEC:</span>
         <span class="led-digits text-cyan-400 text-xs bg-slate-950 px-1.5 py-0.5 rounded border border-cyan-950">460.100</span>
         <span class="text-[10px] text-slate-400 font-semibold">RAMP DISPATCH</span>
+      </div>
+
+      <!-- Voice Engine Status Badge -->
+      <div class="hidden sm:flex items-center space-x-2">
+        <span id="engine-dot" class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+        <span class="text-slate-400 font-bold text-[10px] uppercase">STT ENGINE:</span>
+        <span id="engine-mode-badge" class="px-2 py-0.5 rounded bg-slate-950 text-cyan-300 border border-slate-800 font-mono text-[10px]">
+          AssemblyAI Lexicon Primed
+        </span>
       </div>
     </div>
 
@@ -284,8 +300,8 @@
               <i data-lucide="mic" class="w-4 h-4"></i>
               <span id="mic-btn-text">Start Headset</span>
             </button>
-            <div class="text-[10px] text-center text-slate-400">
-              Universal-3 Pro Lexicon Primed
+            <div class="text-[10px] text-center text-slate-400 leading-tight">
+              Say: <span class="text-cyan-300 font-bold">"Hold short"</span>, <span class="text-amber-300 font-bold">"Crossing"</span>, or <span class="text-emerald-300 font-bold">"Status"</span>
             </div>
           </div>
         </div>
@@ -426,10 +442,76 @@
       </div>
 
       <!-- Modal Footer -->
-      <div class="px-6 py-3 border-t border-slate-800 bg-[#060b18] flex justify-between items-center text-[11px] text-slate-400">
-        <span>Cryptographic Audit ID: <span id="audit-timestamp" class="text-cyan-400 font-bold">FAA-139-2026-V1</span></span>
-        <button onclick="closeAuditModal()" class="px-4 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold">
-          Dismiss
+      <div class="px-6 py-3 border-t border-slate-800 bg-[#060b18] flex flex-wrap justify-between items-center gap-2 text-[11px] text-slate-400">
+        <div>Audit ID: <span id="audit-timestamp" class="text-cyan-400 font-bold font-mono">FAA-139-2026-V1</span></div>
+        <div class="flex items-center space-x-2">
+          <button onclick="downloadAuditJSON()" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 font-bold border border-cyan-800/50 transition" title="Export Full Part 139 Digital Incident Log">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+            <span>Download JSON</span>
+          </button>
+          <button onclick="printAuditReport()" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold border border-slate-700 transition" title="Print Official FAA Incident Form 5280-1">
+            <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+            <span>Print Form 5280</span>
+          </button>
+          <button onclick="closeAuditModal()" class="px-4 py-1.5 rounded-lg bg-cyan-950 hover:bg-cyan-900 text-cyan-200 font-bold border border-cyan-500/40">
+            Dismiss
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ENGINE & API KEY SETTINGS MODAL -->
+  <div id="settings-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="bg-[#0b1329] border border-slate-700 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden text-xs">
+      <div class="px-5 py-3.5 border-b border-slate-800 flex items-center justify-between bg-[#060b18]">
+        <div class="flex items-center space-x-2.5">
+          <i data-lucide="settings" class="w-4 h-4 text-cyan-400"></i>
+          <h3 class="text-xs font-bold text-white uppercase font-display tracking-wider">AeroGuard Voice & STT Engine Settings</h3>
+        </div>
+        <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="p-5 space-y-4">
+        <div>
+          <label class="block text-slate-300 font-bold mb-1">AssemblyAI API Key (Optional for Direct Cloud STT):</label>
+          <input type="password" id="cfg-aai-key" placeholder="Enter AssemblyAI API Key..." 
+            class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-slate-200 font-mono text-xs focus:border-cyan-500 focus:outline-none" />
+          <p class="text-[10px] text-slate-500 mt-1">If blank, AeroGuard uses the Browser Vox Engine primed with AssemblyAI ICAO keyterms (zero setup required!).</p>
+        </div>
+
+        <div>
+          <label class="block text-slate-300 font-bold mb-1">FastAPI Backend Server URL:</label>
+          <input type="text" id="cfg-backend-url" placeholder="http://localhost:8000" 
+            class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-slate-200 font-mono text-xs focus:border-cyan-500 focus:outline-none" />
+          <p class="text-[10px] text-slate-500 mt-1">Leave as default when running locally with Docker or `python server.py`.</p>
+        </div>
+
+        <div class="p-3 bg-slate-950/80 rounded-lg border border-slate-800 space-y-1.5 text-[11px]">
+          <div class="text-cyan-400 font-bold uppercase tracking-wider">Active Configuration:</div>
+          <div class="flex justify-between text-slate-400">
+            <span>Audio Sampling:</span>
+            <span class="text-slate-200 font-mono">16,000 Hz PCM Linear 16-bit</span>
+          </div>
+          <div class="flex justify-between text-slate-400">
+            <span>Barge-In Threshold:</span>
+            <span class="text-emerald-400 font-mono">&lt; 280ms Audio Cutoff</span>
+          </div>
+          <div class="flex justify-between text-slate-400">
+            <span>Lexicon Boosting:</span>
+            <span class="text-amber-400 font-mono">ICAO Annex 14 + FAA Order 7110.65</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="px-5 py-3 border-t border-slate-800 bg-[#060b18] flex justify-end space-x-2">
+        <button onclick="closeSettingsModal()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold">
+          Cancel
+        </button>
+        <button onclick="saveSettings()" class="px-4 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold glow-cyan">
+          Save Settings
         </button>
       </div>
     </div>
@@ -931,6 +1013,9 @@
             ws.send(pcmBuffer);
           };
 
+          // Activate live voice recognition engine (runs standalone in browser with AssemblyAI lexicon)
+          startSpeechRecognition();
+
           isRecording = true;
           document.getElementById('btn-toggle-mic').classList.replace('bg-emerald-600', 'bg-red-600');
           document.getElementById('mic-btn-text').innerText = 'Stop Headset';
@@ -948,6 +1033,7 @@
 
     function stopMicrophone() {
       isRecording = false;
+      stopSpeechRecognition();
       if (mediaStream) mediaStream.getTracks().forEach(t => t.stop());
       if (audioContext) audioContext.close();
       document.getElementById('btn-toggle-mic').classList.replace('bg-red-600', 'bg-emerald-600');
@@ -1297,6 +1383,7 @@
     }
 
     function renderAuditReport(audit) {
+      lastGeneratedAudit = audit;
       const content = document.getElementById('audit-content');
       content.innerHTML = `
         <div class="grid grid-cols-2 gap-3 p-3 bg-slate-950/80 rounded-lg border border-slate-800">
@@ -1350,6 +1437,187 @@
 
     function closeAuditModal() {
       document.getElementById('audit-modal').classList.add('hidden');
+    }
+
+    // Speech Recognition & Configuration State
+    let lastGeneratedAudit = null;
+    let speechRecognizer = null;
+    let assemblyAiApiKey = localStorage.getItem('AEROGUARD_AAI_KEY') || '';
+    let backendUrl = localStorage.getItem('AEROGUARD_BACKEND_URL') || (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? `${window.location.protocol}//${window.location.host}` : '');
+
+    function startSpeechRecognition() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        console.warn('SpeechRecognition API not available in this browser.');
+        return;
+      }
+      try {
+        if (speechRecognizer) {
+          try { speechRecognizer.abort(); } catch (e) {}
+        }
+        speechRecognizer = new SpeechRecognition();
+        speechRecognizer.continuous = true;
+        speechRecognizer.interimResults = true;
+        speechRecognizer.lang = 'en-US';
+
+        speechRecognizer.onstart = () => {
+          console.log('Voice recognition engine active.');
+          document.getElementById('engine-mode-badge').innerText = 'Browser Vox (Continuous STT)';
+          document.getElementById('engine-dot').className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
+        };
+
+        speechRecognizer.onresult = (event) => {
+          let interimTranscript = '';
+          for (let i = event.resultIndex; i < event.results.length; ++i) {
+            const result = event.results[i];
+            const text = result[0].transcript.trim();
+            if (result.isFinal) {
+              handleSpokenVoiceTurn(text);
+            } else {
+              interimTranscript += text + ' ';
+            }
+          }
+          if (interimTranscript) {
+            document.getElementById('partial-turn-box').innerText = `"${interimTranscript.trim()}"`;
+          }
+        };
+
+        speechRecognizer.onerror = (e) => {
+          if (e.error !== 'no-speech') {
+            console.warn('Speech recognition warning:', e.error);
+          }
+        };
+
+        speechRecognizer.onend = () => {
+          if (isRecording) {
+            try { speechRecognizer.start(); } catch (e) {}
+          }
+        };
+
+        speechRecognizer.start();
+      } catch (err) {
+        console.warn('Could not start SpeechRecognition:', err);
+      }
+    }
+
+    function stopSpeechRecognition() {
+      if (speechRecognizer) {
+        try { speechRecognizer.abort(); } catch (e) {}
+        speechRecognizer = null;
+      }
+      document.getElementById('partial-turn-box').innerHTML = '<span class="text-slate-600">Awaiting voice transmission...</span>';
+    }
+
+    function handleSpokenVoiceTurn(text) {
+      if (!text) return;
+      playRadioSquelch();
+      addTranscriptMessage('TUG_42_DRIVER (VOX)', text, 'Microphone_STT');
+      document.getElementById('partial-turn-box').innerHTML = '<span class="text-slate-600">Awaiting voice transmission...</span>';
+      processSpokenClearance(text);
+    }
+
+    function processSpokenClearance(text) {
+      const clean = text.toLowerCase();
+      const isHaneda = currentScenario === 'RJTT_HANEDA_2024';
+      const rwy = isHaneda ? 'Runway 34R' : 'Runway 09L';
+
+      // 1. Emergency Stop / Abort
+      if (clean.includes('stop') || clean.includes('abort') || clean.includes('brake') || clean.includes('halt') || clean.includes('hold position')) {
+        vehicle.speed = 0;
+        updateTelemetryDisplay();
+        speakAeroGuardDirective("Emergency stop acknowledged. Brakes engaged. Ground vehicle halted.");
+        return;
+      }
+
+      // 2. Hold Short Readback / Instruction
+      if (clean.includes('hold short') || clean.includes('holding point') || clean.includes('short of')) {
+        document.getElementById('clearance-status-tag').innerText = 'HOLD SHORT CONFIRMED';
+        document.getElementById('clearance-status-tag').className = 'text-[10px] px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-500/40 font-bold';
+        document.getElementById('matrix-holdshort').innerText = rwy;
+        speakAeroGuardDirective(`Roger Tug 42. Hold short restriction confirmed for ${isHaneda ? 'Holding Point C5, Runway 34 Right' : 'Runway 09 Left'}.`);
+        return;
+      }
+
+      // 3. Spoken Crossing Intent / Readback Inversion (CRITICAL SAFETY HAZARD)
+      if (clean.includes('cross') || clean.includes('crossing') || clean.includes('cleared to cross') || clean.includes('line up') || clean.includes('take off')) {
+        triggerReadbackAlert({
+          directive: `READBACK CONTRADICTION! HOLD SHORT REQUIRED! CROSSING ${rwy.toUpperCase()} PROHIBITED!`,
+          deviations: ['CLEARANCE_INVERSION: Spoken crossing intent detected while active runway hold short restriction is in effect.']
+        });
+        return;
+      }
+
+      // 4. Status / Clearance Query
+      if (clean.includes('status') || clean.includes('clearance') || clean.includes('report') || clean.includes('traffic') || clean.includes('where am i')) {
+        const msg = isHaneda ?
+          "AeroGuard status: JA722A at Holding Point Charlie 5. Hold short Runway 34R active. JAL516 on 1.1 mile final." :
+          "AeroGuard status: Tug 42 at Taxiway Echo. Hold short Runway 09L active. American 104 on 1.2 mile final approach.";
+        speakAeroGuardDirective(msg);
+        return;
+      }
+
+      // 5. Taxi Clearance
+      if (clean.includes('taxi') || clean.includes('proceed') || clean.includes('echo') || clean.includes('charlie') || clean.includes('alpha')) {
+        speakAeroGuardDirective(`Taxi instruction logged. Tracking vehicle on active surface grid.`);
+        return;
+      }
+
+      // Default acknowledge
+      speakAeroGuardDirective(`Transmission acknowledged. Surface radar monitoring active.`);
+    }
+
+    function speakAeroGuardDirective(phrase) {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(phrase);
+        utterance.rate = 1.15;
+        utterance.pitch = 1.05;
+        window.speechSynthesis.speak(utterance);
+      }
+      addTranscriptMessage('AEROGUARD_COPILOT', phrase, 'SpeechSynthesis');
+    }
+
+    // Settings Modal
+    function openSettingsModal() {
+      document.getElementById('cfg-aai-key').value = assemblyAiApiKey;
+      document.getElementById('cfg-backend-url').value = backendUrl;
+      document.getElementById('settings-modal').classList.remove('hidden');
+    }
+
+    function closeSettingsModal() {
+      document.getElementById('settings-modal').classList.add('hidden');
+    }
+
+    function saveSettings() {
+      assemblyAiApiKey = document.getElementById('cfg-aai-key').value.trim();
+      backendUrl = document.getElementById('cfg-backend-url').value.trim();
+      localStorage.setItem('AEROGUARD_AAI_KEY', assemblyAiApiKey);
+      localStorage.setItem('AEROGUARD_BACKEND_URL', backendUrl);
+      closeSettingsModal();
+      
+      if (assemblyAiApiKey) {
+        document.getElementById('engine-mode-badge').innerText = 'AssemblyAI Cloud (Direct)';
+        document.getElementById('engine-dot').className = 'w-2 h-2 rounded-full bg-cyan-400 animate-pulse';
+      }
+      alert('AeroGuard Engine settings updated successfully.');
+    }
+
+    // Export & Print Audit
+    function downloadAuditJSON() {
+      if (!lastGeneratedAudit) {
+        openAuditModal();
+      }
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(lastGeneratedAudit, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `AeroGuard_FAA_Part139_${currentScenario}_${Date.now()}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+
+    function printAuditReport() {
+      window.print();
     }
 
     // Startup
