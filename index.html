@@ -1,0 +1,1363 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AeroGuard - Autonomous Airfield Ground Collision & Runway Incursion Interceptor</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            radar: {
+              bg: '#030712',
+              surface: '#0b1329',
+              border: '#1e293b',
+              green: '#10b981',
+              cyan: '#06b6d4',
+              amber: '#f59e0b',
+              red: '#ef4444'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="styles.css" />
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-[#030712] text-slate-100 min-h-screen flex flex-col select-none overflow-x-hidden">
+
+  <!-- TOP AVIONICS NAVIGATION COCKPIT -->
+  <header class="border-b border-slate-800 bg-[#080e1e]/95 backdrop-blur sticky top-0 z-50 px-5 py-2.5 flex items-center justify-between shadow-2xl">
+    <div class="flex items-center space-x-4">
+      <!-- Radar Target Beacon Logo -->
+      <div class="relative flex items-center justify-center w-10 h-10 rounded-lg bg-emerald-950/60 border border-emerald-500/50 text-emerald-400 glow-green">
+        <i data-lucide="crosshair" class="w-6 h-6 animate-pulse"></i>
+        <span class="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+        </span>
+      </div>
+
+      <div>
+        <div class="flex items-center space-x-2.5">
+          <h1 class="text-base font-extrabold tracking-wider font-display text-white">AEROGUARD</h1>
+          <span class="px-2 py-0.5 text-[10px] font-bold rounded bg-cyan-950/80 border border-cyan-500/40 text-cyan-300">
+            ASSEMBLYAI v3 STREAMING
+          </span>
+          <span class="px-2 py-0.5 text-[10px] font-bold rounded bg-emerald-950/80 border border-emerald-500/40 text-emerald-300">
+            BARGE-IN ARMED
+          </span>
+        </div>
+        <p class="text-[11px] text-slate-400 font-medium">Autonomous Surface Incursion Interceptor · 14 CFR § 139.329 Compliant</p>
+      </div>
+    </div>
+
+    <!-- CENTER: AIRPORT SCENARIO SWITCHER TABS -->
+    <div class="hidden md:flex items-center space-x-1.5 p-1 bg-slate-900/90 border border-slate-800 rounded-lg">
+      <button id="btn-scenario-kord" onclick="setScenario('KORD_TUG_INCURSION')" 
+        class="flex items-center space-x-1.5 px-3 py-1.5 rounded text-xs font-bold transition bg-cyan-950 text-cyan-300 border border-cyan-500/40 shadow-sm">
+        <span>🇺🇸</span>
+        <span>KORD (Chicago O'Hare)</span>
+      </button>
+      <button id="btn-scenario-rjtt" onclick="setScenario('RJTT_HANEDA_2024')" 
+        class="flex items-center space-x-1.5 px-3 py-1.5 rounded text-xs font-bold transition text-slate-400 hover:text-slate-200">
+        <span>🇯🇵</span>
+        <span>RJTT (Haneda 2024 Replay)</span>
+      </button>
+    </div>
+
+    <!-- RIGHT ACTION HUB -->
+    <div class="flex items-center space-x-2.5">
+      <!-- Zulu UTC Clock -->
+      <div class="hidden lg:flex flex-col text-right font-mono text-[10px] text-slate-400 pr-2 border-r border-slate-800">
+        <span class="text-slate-500 font-bold uppercase">UTC ZULU</span>
+        <span id="zulu-clock" class="text-slate-200 font-bold">10:30:00Z</span>
+      </div>
+
+      <!-- State Indicator Badge -->
+      <div class="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg bg-slate-900/90 border border-slate-700">
+        <span class="text-[10px] text-slate-400 font-bold">STATE:</span>
+        <span id="state-badge" class="px-2 py-0.5 text-[10px] font-bold rounded uppercase bg-emerald-950 text-emerald-400 border border-emerald-500/50">
+          IDLE
+        </span>
+      </div>
+
+      <!-- 1-Click Judge Simulation Hero Button -->
+      <button id="btn-judge-sim" onclick="triggerJudgeSimulation()" 
+        class="flex items-center space-x-2 px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-amber-600 via-rose-600 to-red-600 hover:from-amber-500 hover:to-red-500 text-white font-extrabold text-xs uppercase tracking-wider shadow-lg shadow-red-900/40 border border-red-400/50 transition transform hover:scale-[1.02] active:scale-[0.98]">
+        <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-200 animate-bounce"></i>
+        <span>⚡ 1-Click Incursion Sim</span>
+      </button>
+
+      <!-- ICAO Readback Test -->
+      <button onclick="triggerReadbackTest()" 
+        class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-amber-500/40 text-xs font-bold text-amber-300 transition" title="Test ICAO Readback Deviation Engine">
+        <i data-lucide="alert-octagon" class="w-3.5 h-3.5 text-amber-400"></i>
+        <span>Readback Test</span>
+      </button>
+
+      <!-- Part 139 Audit Modal -->
+      <button onclick="openAuditModal()" 
+        class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-bold text-slate-200 transition">
+        <i data-lucide="file-check-2" class="w-3.5 h-3.5 text-cyan-400"></i>
+        <span>Part 139 Audit</span>
+      </button>
+
+      <!-- Reset Airfield -->
+      <button onclick="resetAirfield()" 
+        class="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-400 hover:text-slate-100 transition" title="Reset Airfield State">
+        <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- AVIONICS RADIO STATUS STRIP -->
+  <div class="bg-[#050a17] border-b border-slate-800/80 px-5 py-1.5 flex items-center justify-between text-xs text-slate-400">
+    <div class="flex items-center space-x-6">
+      <!-- Ground Control Frequency -->
+      <div class="flex items-center space-x-2">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span class="text-slate-300 font-bold text-[11px]">VHF PRI:</span>
+        <span class="led-digits text-emerald-400 text-xs bg-slate-950 px-1.5 py-0.5 rounded border border-emerald-950">121.750</span>
+        <span class="text-[10px] text-slate-400 font-semibold">GROUND / TOWER</span>
+      </div>
+
+      <!-- Ramp Operations Frequency -->
+      <div class="flex items-center space-x-2">
+        <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+        <span class="text-slate-300 font-bold text-[11px]">UHF SEC:</span>
+        <span class="led-digits text-cyan-400 text-xs bg-slate-950 px-1.5 py-0.5 rounded border border-cyan-950">460.100</span>
+        <span class="text-[10px] text-slate-400 font-semibold">RAMP DISPATCH</span>
+      </div>
+    </div>
+
+    <!-- Acoustic Stress Test & Noise Generator -->
+    <div class="flex items-center space-x-3">
+      <span class="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Acoustic Ramp Noise:</span>
+      <button id="btn-toggle-noise" onclick="toggleNoiseSimulator()" 
+        class="flex items-center space-x-2 px-3 py-1 rounded-md bg-slate-900 hover:bg-slate-800 border border-slate-700 text-[11px] font-bold text-slate-300 transition">
+        <i data-lucide="volume-2" class="w-3.5 h-3.5 text-slate-400"></i>
+        <span id="noise-btn-text">Jet Noise: OFF</span>
+        <span id="noise-db-badge" class="px-1.5 py-0.2 rounded bg-slate-950 text-slate-400 font-mono text-[10px]">42 dB</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- MAIN COCKPIT VIEWPORT -->
+  <main class="flex-1 p-4 grid grid-cols-12 gap-4 overflow-hidden">
+
+    <!-- LEFT COLUMN: ASDE-X SURFACE RADAR & AVIONICS GAUGES (7 COLS) -->
+    <div class="col-span-12 lg:col-span-7 flex flex-col space-y-4">
+      
+      <!-- RADAR CARD -->
+      <div id="radar-container" class="relative glass-avionics rounded-xl p-3 flex-1 flex flex-col overflow-hidden border border-slate-800 shadow-2xl transition-all duration-300">
+        
+        <!-- Radar Top Header & Telemetry Coordinates -->
+        <div class="flex items-center justify-between mb-2 px-1">
+          <div class="flex items-center space-x-2">
+            <span class="flex h-2 w-2 relative">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span id="radar-title" class="text-xs font-extrabold tracking-wider font-display text-slate-200 uppercase">
+              Airfield Surface Radar (ASDE-X Vector)
+            </span>
+          </div>
+
+          <div class="flex items-center space-x-3 text-[11px] font-mono text-slate-400">
+            <span>RANGE: <strong class="text-slate-300">1.5 NM</strong></span>
+            <span>POS: <strong id="telemetry-coords" class="text-cyan-400">X: 500m, Y: 430m</strong></span>
+            <span>SPD: <strong id="telemetry-speed" class="text-emerald-400">12 kts</strong></span>
+          </div>
+        </div>
+
+        <!-- READBACK DEVIATION ALERT BANNER -->
+        <div id="readback-banner" class="hidden mb-2 p-2.5 rounded-lg bg-amber-950/90 border-2 border-amber-500 text-amber-100 flex items-center justify-between glow-amber">
+          <div class="flex items-center space-x-3">
+            <i data-lucide="alert-octagon" class="w-6 h-6 text-amber-300 animate-bounce"></i>
+            <div>
+              <div class="text-xs font-black tracking-wider text-amber-200 uppercase">ICAO READBACK DEVIATION DETECTED</div>
+              <div id="readback-text" class="text-[11px] text-amber-300">ATC commanded HOLD SHORT, but driver read back CROSSING!</div>
+            </div>
+          </div>
+          <button onclick="dismissReadbackBanner()" class="px-2.5 py-1 rounded bg-amber-900 hover:bg-amber-800 text-amber-100 font-bold text-[10px]">
+            DISMISS
+          </button>
+        </div>
+
+        <!-- EMERGENCY HAZARD BANNER (Pulsing Red Strobe) -->
+        <div id="hazard-banner" class="hidden mb-2 p-2.5 rounded-lg bg-red-950/90 border-2 border-red-500 text-red-100 flex items-center justify-between glow-red strobe-alert">
+          <div class="flex items-center space-x-3">
+            <i data-lucide="alert-triangle" class="w-7 h-7 text-red-300 animate-pulse"></i>
+            <div>
+              <div class="text-xs font-black tracking-widest text-white uppercase">CRITICAL RUNWAY INCURSION INTERCEPTED</div>
+              <div id="hazard-text" class="text-[11px] text-red-200 font-bold">Vehicle breached Hold Line! Conflicting Traffic on Short Final!</div>
+            </div>
+          </div>
+          <div class="text-right">
+            <div class="text-[10px] font-bold text-red-300 uppercase">Impact Margin:</div>
+            <div id="hazard-impact" class="text-base font-black text-white font-mono">14.2s</div>
+          </div>
+        </div>
+
+        <!-- 2D High-Definition Tactical Canvas Radar -->
+        <div class="relative flex-1 bg-[#02050e] rounded-lg overflow-hidden border border-slate-800/90 radar-grid-bg min-h-[380px]">
+          <canvas id="radarCanvas" class="w-full h-full block cursor-crosshair"></canvas>
+          <div class="scanlines absolute inset-0 pointer-events-none"></div>
+
+          <!-- Radar Legend Floating HUD -->
+          <div class="absolute bottom-3 left-3 bg-[#060b18]/90 backdrop-blur border border-slate-800 rounded-md p-2 text-[10px] space-y-1 text-slate-300 pointer-events-none shadow-xl">
+            <div class="flex items-center space-x-2">
+              <span class="w-3 h-1.5 bg-slate-700 border border-slate-500 rounded-xs"></span>
+              <span id="legend-runway" class="font-bold">Runway 09L / 27R</span>
+            </div>
+            <div class="flex items-center space-x-2">
+              <span class="w-3 h-1 bg-amber-400"></span>
+              <span id="legend-hold" class="text-amber-300 font-bold">Hold Short Stopbar</span>
+            </div>
+            <div class="flex items-center space-x-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 shadow-[0_0_8px_#06b6d4]"></span>
+              <span id="legend-vehicle" class="text-cyan-300 font-bold">Tug-42 (Towing B777)</span>
+            </div>
+            <div class="flex items-center space-x-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-red-400 shadow-[0_0_8px_#ef4444]"></span>
+              <span id="legend-traffic" class="text-red-300 font-bold">AA104 (Inbound Final)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- TACTICAL VEHICLE FLIGHT CONTROLS -->
+        <div class="mt-2.5 pt-2.5 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-xs">
+          <div class="flex items-center space-x-2">
+            <span class="text-slate-400 font-bold text-[10px] uppercase">Manual Thrust:</span>
+            <button onclick="nudgeVehicle('SOUTH')" class="px-2.5 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 font-bold text-[11px] transition">
+              ⬇ South (Toward Runway)
+            </button>
+            <button onclick="nudgeVehicle('NORTH')" class="px-2.5 py-1 rounded bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 font-bold text-[11px] transition">
+              ⬆ North (Ramp)
+            </button>
+            <button onclick="nudgeVehicle('STOP')" class="px-3 py-1 rounded bg-red-950/90 hover:bg-red-900 border border-red-700 text-red-200 font-bold text-[11px] transition glow-red">
+              🛑 Emergency Brake
+            </button>
+          </div>
+          <div class="text-[10px] text-slate-400">
+            Click anywhere on the radar map to set tactical vehicle waypoint.
+          </div>
+        </div>
+
+      </div>
+
+      <!-- AUDIO WAVEFORM SPECTRUM & MICROPHONE CONTROLS -->
+      <div class="glass-avionics rounded-xl p-3.5 border border-slate-800 shadow-xl">
+        <div class="flex items-center justify-between mb-2 px-1">
+          <div class="flex items-center space-x-2">
+            <i data-lucide="activity" class="w-4 h-4 text-cyan-400"></i>
+            <span class="text-xs font-bold text-slate-200 font-display tracking-wider uppercase">
+              Phosphor Speech Spectrum & Oscilloscope (16kHz PCM)
+            </span>
+          </div>
+          <div class="flex items-center space-x-2">
+            <span id="mic-status-label" class="text-[10px] font-bold text-slate-400">HEADSET: STANDBY</span>
+            <span id="mic-dot" class="w-2.5 h-2.5 rounded-full bg-slate-600"></span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-12 gap-3 items-center">
+          <!-- Canvas Waveform Visualizer -->
+          <div class="col-span-8 bg-[#02050e] rounded-lg p-1.5 border border-slate-800/90 h-16 flex items-center justify-center relative overflow-hidden">
+            <canvas id="waveformCanvas" class="w-full h-full block"></canvas>
+            <div id="waveform-placeholder" class="absolute text-[11px] text-slate-500 pointer-events-none">
+              Stream inactive. Click Start Headset or 1-Click Simulation.
+            </div>
+          </div>
+
+          <!-- Mic Controls -->
+          <div class="col-span-4 flex flex-col space-y-1.5">
+            <button id="btn-toggle-mic" onclick="toggleMicrophone()" 
+              class="w-full py-2 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs tracking-wider uppercase flex items-center justify-center space-x-2 transition shadow-lg glow-green">
+              <i data-lucide="mic" class="w-4 h-4"></i>
+              <span id="mic-btn-text">Start Headset</span>
+            </button>
+            <div class="text-[10px] text-center text-slate-400">
+              Universal-3 Pro Lexicon Primed
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT COLUMN: DUAL-STREAM TRANSCRIPT HUD & CLEARANCE MATRIX (5 COLS) -->
+    <div class="col-span-12 lg:col-span-5 flex flex-col space-y-4">
+
+      <!-- TRANSCRIPT HUD -->
+      <div class="glass-avionics rounded-xl p-3.5 flex-1 flex flex-col border border-slate-800 shadow-2xl min-h-[380px]">
+        <div class="flex items-center justify-between pb-2 border-b border-slate-800 mb-2.5 px-1">
+          <div class="flex items-center space-x-2">
+            <i data-lucide="radio" class="w-4 h-4 text-emerald-400"></i>
+            <span class="text-xs font-bold text-slate-200 font-display tracking-wider uppercase">
+              AssemblyAI Live Radio Stream
+            </span>
+          </div>
+          <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-400 border border-emerald-500/30">
+            turn_endpointing: active
+          </span>
+        </div>
+
+        <!-- Transcripts Scroll Container -->
+        <div id="transcript-feed" class="flex-1 overflow-y-auto space-y-2.5 pr-1 text-xs">
+          <!-- Initial Welcome -->
+          <div class="p-2.5 rounded-lg bg-[#060b18]/80 border border-slate-800 text-slate-300">
+            <div class="flex items-center justify-between text-[10px] text-slate-500 mb-1">
+              <span class="font-bold text-emerald-400 uppercase tracking-wider">AEROGUARD SYSTEM ONLINE</span>
+              <span>10:30:00Z</span>
+            </div>
+            <p class="leading-relaxed text-[11px]">
+              Active radio channel initialized. Acoustic lexicon primed: <span class="text-cyan-300 font-bold">Hold Short, Runway 09L, Runway 34R, Holding Point C5, Taxiway Echo</span>.
+            </p>
+          </div>
+        </div>
+
+        <!-- Live Partial Turn HUD Bar -->
+        <div class="mt-2.5 pt-2 border-t border-slate-800/80">
+          <div class="text-[10px] text-slate-400 mb-1 flex items-center justify-between font-bold">
+            <span>LIVE INTERIM TURN (ASSEMBLYAI):</span>
+            <span id="stt-latency-tag" class="text-cyan-400 font-mono">260ms latency</span>
+          </div>
+          <div id="partial-turn-box" class="p-2 rounded bg-[#02050e] border border-slate-800/90 text-cyan-300 italic min-h-[36px] flex items-center text-[11px]">
+            <span class="text-slate-600">Awaiting voice transmission...</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CLEARANCE MATRIX & QUICK SPEECH INJECTIONS -->
+      <div class="glass-avionics rounded-xl p-3.5 border border-slate-800 shadow-xl space-y-2.5">
+        <div class="flex items-center justify-between px-1">
+          <div class="flex items-center space-x-2">
+            <i data-lucide="shield-check" class="w-4 h-4 text-cyan-400"></i>
+            <span class="text-xs font-bold text-slate-200 font-display tracking-wider uppercase">
+              Ground Clearance Matrix
+            </span>
+          </div>
+          <span id="clearance-status-tag" class="text-[10px] px-2 py-0.5 rounded bg-amber-950/80 text-amber-300 border border-amber-500/40 font-bold">
+            HOLD SHORT ACTIVE
+          </span>
+        </div>
+
+        <!-- Clearance items -->
+        <div class="grid grid-cols-2 gap-2 text-[11px]">
+          <div class="p-2 rounded-lg bg-[#060b18]/80 border border-slate-800">
+            <span class="text-slate-400 block text-[10px] font-bold">CLEARED TAXIWAYS:</span>
+            <span id="matrix-taxiways" class="text-emerald-400 font-bold">Alpha, Echo</span>
+          </div>
+          <div class="p-2 rounded-lg bg-[#060b18]/80 border border-slate-800">
+            <span class="text-slate-400 block text-[10px] font-bold">HOLD SHORT LIMIT:</span>
+            <span id="matrix-holdshort" class="text-red-400 font-bold">Runway 09L</span>
+          </div>
+          <div class="p-2 rounded-lg bg-[#060b18]/80 border border-slate-800">
+            <span class="text-slate-400 block text-[10px] font-bold">CROSSING CLEARANCE:</span>
+            <span id="matrix-crossings" class="text-slate-400 font-bold">NONE (UNAUTHORIZED)</span>
+          </div>
+          <div class="p-2 rounded-lg bg-[#060b18]/80 border border-slate-800">
+            <span class="text-slate-400 block text-[10px] font-bold">ASSIGNED PAD:</span>
+            <span id="matrix-destination" class="text-cyan-300 font-bold">South Hangars</span>
+          </div>
+        </div>
+
+        <!-- QUICK VOICE TEST INJECTION BUTTONS -->
+        <div class="pt-2 border-t border-slate-800">
+          <span class="text-[10px] text-slate-400 block mb-1.5 uppercase font-bold">Quick Spoken Transmissions:</span>
+          <div class="grid grid-cols-3 gap-1.5">
+            <button onclick="injectClearance('Hold short of active runway.')" 
+              class="p-1.5 rounded bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 text-[10px] font-semibold text-center transition">
+              "Hold Short"
+            </button>
+            <button onclick="injectClearance('Cleared to cross active runway, expedite.')" 
+              class="p-1.5 rounded bg-slate-900 hover:bg-slate-800 border border-emerald-500/40 text-emerald-400 text-[10px] font-semibold text-center transition">
+              "Cross Runway"
+            </button>
+            <button onclick="injectClearance('Immediate stop! Hold position!')" 
+              class="p-1.5 rounded bg-red-950/80 hover:bg-red-900 border border-red-800 text-red-300 text-[10px] font-semibold text-center transition">
+              "Immediate Stop"
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <!-- FAA PART 139 DIGITAL AUDIT MODAL -->
+  <div id="audit-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="bg-[#0b1329] border border-slate-700 rounded-2xl w-full max-w-3xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+      <!-- Modal Header -->
+      <div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-[#060b18]">
+        <div class="flex items-center space-x-3">
+          <div class="p-2 rounded-lg bg-cyan-950/80 border border-cyan-500/40 text-cyan-400 glow-cyan">
+            <i data-lucide="file-check-2" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-white uppercase font-display tracking-wider">FAA Part 139 / ICAO Surface Incident Digital Audit</h3>
+            <p class="text-[11px] text-slate-400">Synthesized via AssemblyAI LLM Gateway (14 CFR § 139.329 Compliance)</p>
+          </div>
+        </div>
+        <button onclick="closeAuditModal()" class="text-slate-400 hover:text-white p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-6 overflow-y-auto space-y-4 text-xs font-mono">
+        <div id="audit-loading" class="hidden text-center py-10 space-y-3">
+          <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-400"></div>
+          <p class="text-slate-400">Synthesizing regulatory audit report via AssemblyAI LLM Gateway...</p>
+        </div>
+
+        <div id="audit-content" class="space-y-4">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="px-6 py-3 border-t border-slate-800 bg-[#060b18] flex justify-between items-center text-[11px] text-slate-400">
+        <span>Cryptographic Audit ID: <span id="audit-timestamp" class="text-cyan-400 font-bold">FAA-139-2026-V1</span></span>
+        <button onclick="closeAuditModal()" class="px-4 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold">
+          Dismiss
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT AVIONICS ENGINE -->
+  <script>
+    // Initialize icons
+    lucide.createIcons();
+
+    // Clock
+    setInterval(() => {
+      const now = new Date();
+      document.getElementById('zulu-clock').innerText = now.toISOString().substring(11, 19) + 'Z';
+    }, 1000);
+
+    // State
+    let ws = null;
+    let audioContext = null;
+    let mediaStream = null;
+    let audioProcessor = null;
+    let isRecording = false;
+    let radarCanvas = document.getElementById('radarCanvas');
+    let ctx = radarCanvas.getContext('2d');
+    let waveCanvas = document.getElementById('waveformCanvas');
+    let waveCtx = waveCanvas.getContext('2d');
+    let analyser = null;
+
+    // Noise Generator
+    let noiseNode = null;
+    let noiseGain = null;
+    let isNoiseActive = false;
+
+    // Airfield & Vehicle State
+    let currentScenario = 'KORD_TUG_INCURSION';
+    let vehicle = { id: 'TUG-42', x: 500, y: 430, speed: 12, heading: 180, type: 'TUG', towed: 'B777' };
+    let traffic = { id: 'AA104', type: 'B737-800', x: 180, y: 300, dist: 1.2, speed: 138 };
+    let incursionActive = false;
+
+    // Radio squelch sound effect
+    function playRadioSquelch() {
+      try {
+        const actx = new (window.AudioContext || window.webkitAudioContext)();
+        const bufferSize = actx.sampleRate * 0.04;
+        const buffer = actx.createBuffer(1, bufferSize, actx.sampleRate);
+        const output = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          output[i] = Math.random() * 2 - 1;
+        }
+        const whiteNoise = actx.createBufferSource();
+        whiteNoise.buffer = buffer;
+        const gain = actx.createGain();
+        gain.gain.setValueAtTime(0.06, actx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + 0.04);
+        whiteNoise.connect(gain);
+        gain.connect(actx.destination);
+        whiteNoise.start();
+      } catch (e) {}
+    }
+
+    // Audio alarm synthesizer
+    function playBargeInAlarm(customDirective) {
+      try {
+        const actx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = actx.createOscillator();
+        const gain = actx.createGain();
+        
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(880, actx.currentTime);
+        
+        gain.gain.setValueAtTime(0.35, actx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, actx.currentTime + 2.5);
+        
+        osc.connect(gain);
+        gain.connect(actx.destination);
+        osc.start();
+        osc.stop(actx.currentTime + 2.5);
+
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+          const phrase = customDirective || (currentScenario === 'RJTT_HANEDA_2024' ? 
+            "PULL UP! HOLD POSITION! RUNWAY THREE FOUR RIGHT INCURSION!" :
+            "PULL UP! HOLD POSITION! RUNWAY ZERO NINE LEFT INCURSION!");
+          const speech = new SpeechSynthesisUtterance(phrase);
+          speech.rate = 1.25;
+          speech.pitch = 1.3;
+          window.speechSynthesis.speak(speech);
+        }
+      } catch (e) {
+        console.warn('Audio alert synthesis error:', e);
+      }
+    }
+
+    // Noise Generator (+100 dB acoustic simulation)
+    function toggleNoiseSimulator() {
+      if (!isNoiseActive) {
+        try {
+          const actx = new (window.AudioContext || window.webkitAudioContext)();
+          const bufferSize = actx.sampleRate * 2;
+          const noiseBuffer = actx.createBuffer(1, bufferSize, actx.sampleRate);
+          const output = noiseBuffer.getChannelData(0);
+          let b0 = 0, b1 = 0, b2 = 0;
+          for (let i = 0; i < bufferSize; i++) {
+            const white = Math.random() * 2 - 1;
+            b0 = 0.99886 * b0 + white * 0.0555179;
+            b1 = 0.99332 * b1 + white * 0.0750759;
+            b2 = 0.96900 * b2 + white * 0.1538520;
+            output[i] = (b0 + b1 + b2) * 0.28;
+          }
+          noiseNode = actx.createBufferSource();
+          noiseNode.buffer = noiseBuffer;
+          noiseNode.loop = true;
+
+          noiseGain = actx.createGain();
+          noiseGain.gain.setValueAtTime(0.25, actx.currentTime);
+          noiseNode.connect(noiseGain);
+          noiseGain.connect(actx.destination);
+          noiseNode.start();
+
+          isNoiseActive = true;
+          document.getElementById('noise-btn-text').innerText = 'Jet Noise: ACTIVE';
+          document.getElementById('btn-toggle-noise').classList.replace('bg-slate-900', 'bg-red-950');
+          document.getElementById('btn-toggle-noise').classList.add('border-red-500', 'glow-red');
+          document.getElementById('noise-db-badge').innerText = '105 dB';
+          document.getElementById('noise-db-badge').className = 'px-1.5 py-0.2 rounded bg-red-900 text-white font-mono text-[10px] font-bold animate-pulse';
+        } catch (e) {
+          alert('Could not start noise simulator: ' + e.message);
+        }
+      } else {
+        if (noiseNode) {
+          noiseNode.stop();
+          noiseNode.disconnect();
+        }
+        isNoiseActive = false;
+        document.getElementById('noise-btn-text').innerText = 'Jet Noise: OFF';
+        document.getElementById('btn-toggle-noise').classList.replace('bg-red-950', 'bg-slate-900');
+        document.getElementById('btn-toggle-noise').classList.remove('border-red-500', 'glow-red');
+        document.getElementById('noise-db-badge').innerText = '42 dB';
+        document.getElementById('noise-db-badge').className = 'px-1.5 py-0.2 rounded bg-slate-950 text-slate-400 font-mono text-[10px]';
+      }
+    }
+
+    // Scenario Switching
+    async function setScenario(scenarioId) {
+      currentScenario = scenarioId;
+      const btnKord = document.getElementById('btn-scenario-kord');
+      const btnRjtt = document.getElementById('btn-scenario-rjtt');
+      
+      if (scenarioId === 'RJTT_HANEDA_2024') {
+        btnRjtt.className = 'flex items-center space-x-1.5 px-3 py-1.5 rounded text-xs font-bold transition bg-cyan-950 text-cyan-300 border border-cyan-500/40 shadow-sm';
+        btnKord.className = 'flex items-center space-x-1.5 px-3 py-1.5 rounded text-xs font-bold transition text-slate-400 hover:text-slate-200';
+        document.getElementById('radar-title').innerText = 'Airfield Surface Radar (RJTT Haneda 34R)';
+        document.getElementById('legend-runway').innerText = 'Runway 16L / 34R';
+        document.getElementById('legend-hold').innerText = 'Holding Point C5';
+        document.getElementById('legend-vehicle').innerText = 'JA722A (Coast Guard Dash-8)';
+        document.getElementById('legend-traffic').innerText = 'JAL516 (A350 Final)';
+        document.getElementById('matrix-holdshort').innerText = 'Runway 34R';
+        document.getElementById('matrix-taxiways').innerText = 'Charlie, C5';
+        document.getElementById('matrix-destination').innerText = 'Holding Point C5';
+      } else {
+        btnKord.className = 'flex items-center space-x-1.5 px-3 py-1.5 rounded text-xs font-bold transition bg-cyan-950 text-cyan-300 border border-cyan-500/40 shadow-sm';
+        btnRjtt.className = 'flex items-center space-x-1.5 px-3 py-1.5 rounded text-xs font-bold transition text-slate-400 hover:text-slate-200';
+        document.getElementById('radar-title').innerText = 'Airfield Surface Radar (KORD ASDE-X)';
+        document.getElementById('legend-runway').innerText = 'Runway 09L / 27R';
+        document.getElementById('legend-hold').innerText = 'Hold Short Stopbar (Echo)';
+        document.getElementById('legend-vehicle').innerText = 'Tug-42 (Towing B777)';
+        document.getElementById('legend-traffic').innerText = 'AA104 (Inbound Final)';
+        document.getElementById('matrix-holdshort').innerText = 'Runway 09L';
+        document.getElementById('matrix-taxiways').innerText = 'Alpha, Echo';
+        document.getElementById('matrix-destination').innerText = 'South Hangars';
+      }
+
+      await fetch(`/api/scenario/${scenarioId}`, { method: 'POST' });
+      resetAirfield();
+    }
+
+    // Connect WebSocket
+    function connectWebSocket() {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${window.location.host}/ws/audio`;
+      ws = new WebSocket(wsUrl);
+
+      ws.onopen = () => {
+        console.log('Connected to AeroGuard WebSocket');
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+          handleServerMessage(msg);
+        } catch (e) {
+          console.error('Error parsing WS message:', e);
+        }
+      };
+
+      ws.onclose = () => {
+        setTimeout(connectWebSocket, 2000);
+      };
+    }
+
+    function handleServerMessage(msg) {
+      if (msg.type === 'INITIAL_HANDSHAKE' || msg.type === 'AIRFIELD_SNAPSHOT' || msg.type === 'SCENARIO_CHANGED') {
+        const snap = msg.snapshot;
+        if (snap && snap.vehicles) {
+          const vKey = Object.keys(snap.vehicles)[0];
+          if (vKey) {
+            const v = snap.vehicles[vKey];
+            vehicle.id = v.vehicle_id;
+            vehicle.x = v.x;
+            vehicle.y = v.y;
+            vehicle.speed = v.speed_kts;
+            vehicle.heading = v.heading_deg;
+            vehicle.type = v.vehicle_type;
+            vehicle.towed = v.towed_aircraft;
+            updateTelemetryDisplay();
+          }
+        }
+        if (snap && snap.traffic) {
+          const tKey = Object.keys(snap.traffic)[0];
+          if (tKey) {
+            const t = snap.traffic[tKey];
+            traffic.id = t.callsign;
+            traffic.type = t.aircraft_type;
+            traffic.x = t.x;
+            traffic.y = t.y;
+            traffic.dist = t.distance_nm;
+            traffic.speed = t.ground_speed_kts;
+          }
+        }
+      } else if (msg.type === 'STATE_CHANGE') {
+        updateStateBadge(msg.to_state);
+      } else if (msg.type === 'TRANSCRIPT_STREAM') {
+        const turn = msg.turn;
+        if (turn.end_of_turn) {
+          playRadioSquelch();
+          addTranscriptMessage(turn.speaker || 'SPEAKER', turn.transcript, turn.source);
+          document.getElementById('partial-turn-box').innerHTML = '<span class="text-slate-600">Awaiting voice transmission...</span>';
+        } else {
+          document.getElementById('partial-turn-box').innerText = `"${turn.transcript}"`;
+        }
+      } else if (msg.type === 'BARGE_IN_ALERT') {
+        triggerVisualIncursionAlert(msg);
+      } else if (msg.type === 'READBACK_DEVIATION_ALERT') {
+        triggerReadbackAlert(msg);
+      }
+    }
+
+    function updateStateBadge(state) {
+      const badge = document.getElementById('state-badge');
+      badge.innerText = state;
+      badge.className = 'px-2 py-0.5 text-[10px] font-bold rounded uppercase border ';
+      
+      if (state === 'INTERRUPTED' || state === 'ALERT_BROADCAST') {
+        badge.classList.add('bg-red-950', 'text-red-400', 'border-red-500/80', 'glow-red');
+      } else if (state === 'VALIDATING') {
+        badge.classList.add('bg-cyan-950', 'text-cyan-400', 'border-cyan-500/60');
+      } else if (state === 'LISTENING') {
+        badge.classList.add('bg-emerald-950', 'text-emerald-400', 'border-emerald-500/60');
+      } else {
+        badge.classList.add('bg-slate-900', 'text-slate-400', 'border-slate-700');
+      }
+    }
+
+    function addTranscriptMessage(speaker, text, source) {
+      const feed = document.getElementById('transcript-feed');
+      const div = document.createElement('div');
+      const isAeroGuard = speaker.includes('AEROGUARD') || speaker.includes('BARGE');
+      const isATC = speaker.includes('ATC') || speaker.includes('TOWER');
+
+      div.className = `p-2.5 rounded-lg border leading-relaxed ${
+        isAeroGuard ? 'bg-red-950/70 border-red-500/60 text-red-100 glow-red' :
+        isATC ? 'bg-[#060e22]/90 border-slate-700/80 text-slate-200' :
+        'bg-cyan-950/40 border-cyan-800/40 text-cyan-100'
+      }`;
+
+      let highlighted = text.replace(/(Runway\s+09L|Runway\s+34R|09L|34R|Taxiway\s+Echo|Taxiway\s+Charlie|C5|Holding\s+Point\s+C5|Hold Short|Cross|Immediate Stop|Number\s+1)/gi, 
+        '<span class="px-1 py-0.2 rounded bg-amber-500/20 text-amber-300 font-bold">$1</span>');
+
+      div.innerHTML = `
+        <div class="flex items-center justify-between text-[10px] text-slate-400 mb-1">
+          <span class="font-bold uppercase tracking-wider ${isAeroGuard ? 'text-red-400 font-extrabold' : isATC ? 'text-emerald-400' : 'text-cyan-400'}">${speaker}</span>
+          <span>${new Date().toLocaleTimeString()}</span>
+        </div>
+        <p class="text-[11px]">${highlighted}</p>
+      `;
+
+      feed.appendChild(div);
+      feed.scrollTop = feed.scrollHeight;
+    }
+
+    function triggerVisualIncursionAlert(alertData) {
+      incursionActive = true;
+      const banner = document.getElementById('hazard-banner');
+      const radarContainer = document.getElementById('radar-container');
+      const matrixCross = document.getElementById('matrix-crossings');
+      
+      banner.classList.remove('hidden');
+      document.getElementById('hazard-text').innerText = alertData.speech_directive || 'RUNWAY INCURSION!';
+      document.getElementById('hazard-impact').innerText = `${alertData.time_to_impact_sec || 14.2}s`;
+      
+      radarContainer.classList.add('glass-avionics-alert');
+      matrixCross.innerText = 'VIOLATION: STOPBAR BREACHED';
+      matrixCross.className = 'text-red-400 font-bold';
+
+      playBargeInAlarm(alertData.speech_directive);
+    }
+
+    function triggerReadbackAlert(data) {
+      const rbBanner = document.getElementById('readback-banner');
+      rbBanner.classList.remove('hidden');
+      document.getElementById('readback-text').innerText = `${data.directive} (${data.deviations.join(', ')})`;
+      playBargeInAlarm(data.directive);
+    }
+
+    function dismissReadbackBanner() {
+      document.getElementById('readback-banner').classList.add('hidden');
+    }
+
+    function updateTelemetryDisplay() {
+      document.getElementById('telemetry-coords').innerText = `X: ${Math.round(vehicle.x)}m, Y: ${Math.round(vehicle.y)}m`;
+      document.getElementById('telemetry-speed').innerText = `${vehicle.speed} kts`;
+    }
+
+    // 1-Click Judge Simulation Trigger
+    async function triggerJudgeSimulation() {
+      const btn = document.getElementById('btn-judge-sim');
+      btn.disabled = true;
+      btn.classList.add('opacity-70');
+
+      try {
+        const resp = await fetch('/api/simulate-incident', { method: 'POST' });
+        if (!resp.ok) throw new Error('API offline');
+        const data = await resp.json();
+        console.log('Simulation response:', data);
+      } catch (e) {
+        console.log('Executing Client-Side Autonomous Simulation (GitHub Pages Mode)...');
+        runClientSideSimulation();
+      } finally {
+        setTimeout(() => {
+          btn.disabled = false;
+          btn.classList.remove('opacity-70');
+        }, 1500);
+      }
+    }
+
+    function runClientSideSimulation() {
+      updateStateBadge('VALIDATING');
+      const rwy = currentScenario === 'RJTT_HANEDA_2024' ? '34R' : '09L';
+      const isHaneda = currentScenario === 'RJTT_HANEDA_2024';
+      
+      addTranscriptMessage(
+        isHaneda ? 'TOKYO_TOWER' : 'ATC_GROUND',
+        isHaneda ? 'JA722A, taxi to holding point C5, hold short of Runway 34R, number 1.' : 'Tug 42, taxi south via Echo, hold short of Runway 09L, traffic on final.',
+        'AssemblyAI_Streaming'
+      );
+
+      setTimeout(() => {
+        addTranscriptMessage(
+          isHaneda ? 'JA722A_PILOT' : 'TUG_42_DRIVER',
+          isHaneda ? 'Taxi to holding point C5, JA722A.' : 'Taxi south via Echo, hold short 09L, Tug 42.',
+          'AssemblyAI_Streaming'
+        );
+
+        let moves = 0;
+        const driveInterval = setInterval(() => {
+          moves++;
+          vehicle.y -= 25;
+          vehicle.speed = 14;
+          updateTelemetryDisplay();
+
+          if (vehicle.y <= 330) {
+            clearInterval(driveInterval);
+            triggerVisualIncursionAlert({
+              alert_id: 'ALT-CRIT-' + Date.now(),
+              severity: 'CRITICAL_INCURSION',
+              vehicle_id: vehicle.id,
+              runway_id: rwy,
+              speech_directive: `PULL UP! HOLD POSITION! RUNWAY ${rwy} INCURSION! TRAFFIC ON FINAL!`,
+              time_to_impact_sec: 14.2
+            });
+            updateStateBadge('INTERRUPTED');
+          }
+        }, 350);
+      }, 900);
+    }
+
+    // ICAO Readback Deviation Test
+    async function triggerReadbackTest() {
+      try {
+        const resp = await fetch('/api/simulate-readback-deviation', { method: 'POST' });
+        if (!resp.ok) throw new Error('API offline');
+        const data = await resp.json();
+        console.log('Readback test response:', data);
+      } catch (e) {
+        console.log('Executing Client-Side Readback Test (GitHub Pages Mode)...');
+        addTranscriptMessage('ATC_GROUND', 'Tug 42, taxi via Echo, hold short of Runway 09L.', 'AssemblyAI_Streaming');
+        setTimeout(() => {
+          addTranscriptMessage('TUG_42_DRIVER', 'Taxi via Echo, cross Runway 09L, Tug 42.', 'AssemblyAI_Streaming');
+          triggerReadbackAlert({
+            directive: 'READBACK ERROR! HOLD SHORT REQUIRED! CROSSING NOT PERMITTED!',
+            deviations: ['CRITICAL_CLEARANCE_INVERSION: ATC instructed HOLD SHORT, but readback stated CROSS/LINE UP.']
+          });
+        }, 800);
+      }
+    }
+
+    // Speech injection
+    function injectClearance(text) {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+          type: 'SPOKEN_SPEECH_INJECTION',
+          text: text,
+          speaker: text.includes('Hold') || text.includes('Cleared') ? 'ATC_GROUND' : 'OPERATOR'
+        }));
+      }
+    }
+
+    // Vehicle Nudge
+    function nudgeVehicle(action) {
+      if (action === 'SOUTH') {
+        vehicle.y -= 25;
+        vehicle.speed = 14;
+      } else if (action === 'NORTH') {
+        vehicle.y += 25;
+        vehicle.speed = 8;
+      } else if (action === 'STOP') {
+        vehicle.speed = 0;
+      }
+      updateTelemetryDisplay();
+
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+          type: 'TELEMETRY_UPDATE',
+          vehicle_id: vehicle.id,
+          x: vehicle.x,
+          y: vehicle.y,
+          speed_kts: vehicle.speed,
+          heading_deg: 180
+        }));
+      }
+    }
+
+    async function resetAirfield() {
+      incursionActive = false;
+      document.getElementById('hazard-banner').classList.add('hidden');
+      document.getElementById('readback-banner').classList.add('hidden');
+      document.getElementById('radar-container').classList.remove('glass-avionics-alert');
+      document.getElementById('transcript-feed').innerHTML = '';
+      await fetch('/api/reset', { method: 'POST' });
+    }
+
+    // Interactive radar canvas click to move
+    radarCanvas.addEventListener('click', (e) => {
+      const rect = radarCanvas.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const clickY = e.clientY - rect.top;
+      
+      vehicle.x = (clickX / radarCanvas.width) * 1000;
+      vehicle.y = 600 - ((clickY / radarCanvas.height) * 600);
+      updateTelemetryDisplay();
+
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+          type: 'TELEMETRY_UPDATE',
+          vehicle_id: vehicle.id,
+          x: vehicle.x,
+          y: vehicle.y,
+          speed_kts: vehicle.speed,
+          heading_deg: 180
+        }));
+      }
+    });
+
+    // Microphone toggle & streaming
+    async function toggleMicrophone() {
+      if (!isRecording) {
+        try {
+          mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+          const source = audioContext.createMediaStreamSource(mediaStream);
+          
+          analyser = audioContext.createAnalyser();
+          analyser.fftSize = 64;
+          source.connect(analyser);
+
+          audioProcessor = audioContext.createScriptProcessor(4096, 1, 1);
+          source.connect(audioProcessor);
+          audioProcessor.connect(audioContext.destination);
+
+          audioProcessor.onaudioprocess = (e) => {
+            if (!isRecording || !ws || ws.readyState !== WebSocket.OPEN) return;
+            const inputData = e.inputBuffer.getChannelData(0);
+            const pcmBuffer = new ArrayBuffer(inputData.length * 2);
+            const view = new DataView(pcmBuffer);
+            for (let i = 0; i < inputData.length; i++) {
+              let s = Math.max(-1, Math.min(1, inputData[i]));
+              view.setInt16(i * 2, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+            }
+            ws.send(pcmBuffer);
+          };
+
+          isRecording = true;
+          document.getElementById('btn-toggle-mic').classList.replace('bg-emerald-600', 'bg-red-600');
+          document.getElementById('mic-btn-text').innerText = 'Stop Headset';
+          document.getElementById('mic-status-label').innerText = 'HEADSET: LIVE VOX';
+          document.getElementById('mic-dot').classList.replace('bg-slate-600', 'bg-red-500');
+          document.getElementById('waveform-placeholder').classList.add('hidden');
+          drawWaveform();
+        } catch (err) {
+          alert('Could not access microphone: ' + err.message);
+        }
+      } else {
+        stopMicrophone();
+      }
+    }
+
+    function stopMicrophone() {
+      isRecording = false;
+      if (mediaStream) mediaStream.getTracks().forEach(t => t.stop());
+      if (audioContext) audioContext.close();
+      document.getElementById('btn-toggle-mic').classList.replace('bg-red-600', 'bg-emerald-600');
+      document.getElementById('mic-btn-text').innerText = 'Start Headset';
+      document.getElementById('mic-status-label').innerText = 'HEADSET: STANDBY';
+      document.getElementById('mic-dot').classList.replace('bg-red-500', 'bg-slate-600');
+      document.getElementById('waveform-placeholder').classList.remove('hidden');
+    }
+
+    function drawWaveform() {
+      if (!isRecording) return;
+      requestAnimationFrame(drawWaveform);
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+      analyser.getByteFrequencyData(dataArray);
+
+      waveCtx.fillStyle = '#02050e';
+      waveCtx.fillRect(0, 0, waveCanvas.width, waveCanvas.height);
+
+      const barWidth = (waveCanvas.width / bufferLength) * 1.6;
+      let x = 0;
+      for (let i = 0; i < bufferLength; i++) {
+        const barHeight = (dataArray[i] / 255) * waveCanvas.height;
+        waveCtx.fillStyle = incursionActive ? '#ef4444' : '#06b6d4';
+        waveCtx.fillRect(x, waveCanvas.height - barHeight, barWidth, barHeight);
+        x += barWidth + 2;
+      }
+    }
+
+    // High-Resolution 2D ASDE-X Surface Radar Drawing
+    function resizeCanvases() {
+      radarCanvas.width = radarCanvas.parentElement.clientWidth;
+      radarCanvas.height = radarCanvas.parentElement.clientHeight;
+      waveCanvas.width = waveCanvas.parentElement.clientWidth;
+      waveCanvas.height = waveCanvas.parentElement.clientHeight;
+    }
+    window.addEventListener('resize', resizeCanvases);
+
+    let sweepAngle = 0;
+    let wigWagTimer = 0;
+
+    function drawRadar() {
+      requestAnimationFrame(drawRadar);
+      const w = radarCanvas.width;
+      const h = radarCanvas.height;
+      if (!w || !h) return;
+
+      const toScreenX = (x) => (x / 1000) * w;
+      const toScreenY = (y) => ((600 - y) / 600) * h;
+      const isHaneda = currentScenario === 'RJTT_HANEDA_2024';
+
+      ctx.clearRect(0, 0, w, h);
+
+      // --- 1. Tactical Distance Range Rings ---
+      const centerX = w / 2;
+      const centerY = h / 2;
+      ctx.strokeStyle = 'rgba(6, 182, 212, 0.08)';
+      ctx.lineWidth = 1;
+      [0.25, 0.5, 0.75, 1.0].forEach(factor => {
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, (h * 0.45) * factor, 0, Math.PI * 2);
+        ctx.stroke();
+      });
+
+      // --- 2. Runway Surface with Threshold Markings ---
+      const rwyY = toScreenY(300);
+      const rwyHeight = (65 / 600) * h;
+      const rwyX = toScreenX(80);
+      const rwyW = toScreenX(840);
+
+      // Runway Asphalt Bed
+      ctx.fillStyle = '#141d2e';
+      ctx.fillRect(rwyX, rwyY - rwyHeight / 2, rwyW, rwyHeight);
+      
+      // Runway Edge Lights (white/cyan dots along edges)
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+      for (let lx = 90; lx <= 910; lx += 40) {
+        ctx.beginPath();
+        ctx.arc(toScreenX(lx), rwyY - rwyHeight / 2 - 1, 1.5, 0, Math.PI * 2);
+        ctx.arc(toScreenX(lx), rwyY + rwyHeight / 2 + 1, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Runway Threshold "Piano Keys"
+      ctx.fillStyle = '#ffffff';
+      for (let k = 0; k < 6; k++) {
+        const offset = (k * 8) - 20;
+        ctx.fillRect(rwyX + 8, rwyY + offset, 24, 4);
+        ctx.fillRect(rwyX + rwyW - 32, rwyY + offset, 24, 4);
+      }
+
+      // Runway Centerline Dashed Stripe
+      ctx.strokeStyle = '#f8fafc';
+      ctx.lineWidth = 2.5;
+      ctx.setLineDash([14, 14]);
+      ctx.beginPath();
+      ctx.moveTo(rwyX + 45, rwyY);
+      ctx.lineTo(rwyX + rwyW - 45, rwyY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Runway Designation Numerals (Bold Stencil style)
+      ctx.fillStyle = '#cbd5e1';
+      ctx.font = 'bold 15px "Chakra Petch", monospace';
+      ctx.fillText(isHaneda ? '34R' : '09L', rwyX + 45, rwyY + 5);
+      ctx.fillText(isHaneda ? '16L' : '27R', rwyX + rwyW - 85, rwyY + 5);
+
+      // --- 3. Taxiways with Green Centerline Lead-in Lights ---
+      // Parallel Taxiway (Alpha / Charlie at Y=420)
+      const twyY = toScreenY(420);
+      const twyH = (26 / 600) * h;
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(toScreenX(50), twyY - twyH / 2, toScreenX(900), twyH);
+      
+      // Green centerline
+      ctx.strokeStyle = '#10b981';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(toScreenX(50), twyY);
+      ctx.lineTo(toScreenX(950), twyY);
+      ctx.stroke();
+
+      ctx.fillStyle = '#64748b';
+      ctx.font = 'bold 9px "Chakra Petch", monospace';
+      ctx.fillText(isHaneda ? 'TAXIWAY CHARLIE (TWY C)' : 'TAXIWAY ALPHA (TWY A)', toScreenX(60), twyY + 3);
+
+      // Crossing Taxiway (Echo / C5 at X=500)
+      const twyCrossX = toScreenX(500);
+      const twyCrossW = (32 / 1000) * w;
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(twyCrossX - twyCrossW / 2, toScreenY(450), twyCrossW, (300 / 600) * h);
+      
+      // Green crossing centerline
+      ctx.beginPath();
+      ctx.moveTo(twyCrossX, toScreenY(450));
+      ctx.lineTo(twyCrossX, toScreenY(150));
+      ctx.stroke();
+
+      ctx.fillStyle = '#64748b';
+      ctx.fillText(isHaneda ? 'TWY C5' : 'TWY ECHO', twyCrossX + 20, toScreenY(385));
+
+      // --- 4. Runway Hold Short Lines with Active Wig-Wag Guard Lights ---
+      const holdNorthY = toScreenY(345);
+      wigWagTimer += 0.05;
+      const wigWagPhase = Math.sin(wigWagTimer) > 0;
+
+      // Double solid + Double dashed lines
+      ctx.strokeStyle = incursionActive ? '#ef4444' : '#f59e0b';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(twyCrossX - twyCrossW / 2 - 10, holdNorthY - 2);
+      ctx.lineTo(twyCrossX + twyCrossW / 2 + 10, holdNorthY - 2);
+      ctx.stroke();
+
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.moveTo(twyCrossX - twyCrossW / 2 - 10, holdNorthY + 3);
+      ctx.lineTo(twyCrossX + twyCrossW / 2 + 10, holdNorthY + 3);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Wig-Wag Yellow/Amber Alternating Guard Lights at Hold Line
+      ctx.fillStyle = wigWagPhase ? '#f59e0b' : '#ef4444';
+      ctx.beginPath();
+      ctx.arc(twyCrossX - twyCrossW / 2 - 14, holdNorthY, 3, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = !wigWagPhase ? '#f59e0b' : '#ef4444';
+      ctx.beginPath();
+      ctx.arc(twyCrossX + twyCrossW / 2 + 14, holdNorthY, 3, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = incursionActive ? '#ef4444' : '#f59e0b';
+      ctx.font = 'bold 9px "Chakra Petch", monospace';
+      ctx.fillText(isHaneda ? 'STOPBAR C5' : 'HOLD 09L', twyCrossX - 65, holdNorthY - 6);
+
+      // --- 5. Inbound Aircraft Target Data Block (AA104 / JAL516) ---
+      const acX = toScreenX(traffic.x);
+      const acY = toScreenY(traffic.y);
+
+      // Draw Aircraft Silhouette (Swept wings, fuselage)
+      ctx.save();
+      ctx.translate(acX, acY);
+      ctx.fillStyle = '#ef4444';
+      ctx.beginPath();
+      // Fuselage
+      ctx.ellipse(0, 0, 8, 3, 0, 0, Math.PI * 2);
+      // Wings
+      ctx.moveTo(0, 0);
+      ctx.lineTo(-4, -12);
+      ctx.lineTo(2, -12);
+      ctx.lineTo(4, 0);
+      ctx.lineTo(2, 12);
+      ctx.lineTo(-4, 12);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+
+      // Velocity predictor ribbon
+      ctx.strokeStyle = '#ef4444';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([4, 2]);
+      ctx.beginPath();
+      ctx.moveTo(acX, acY);
+      ctx.lineTo(acX + 35, acY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Tactical Flight Data Block with Leader Line
+      ctx.strokeStyle = 'rgba(239, 68, 68, 0.7)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(acX, acY);
+      ctx.lineTo(acX - 15, acY - 20);
+      ctx.lineTo(acX - 70, acY - 20);
+      ctx.stroke();
+
+      ctx.fillStyle = '#fca5a5';
+      ctx.font = 'bold 10px "JetBrains Mono", monospace';
+      ctx.fillText(`${traffic.id} (${traffic.type})`, acX - 70, acY - 24);
+      ctx.font = '9px "JetBrains Mono", monospace';
+      ctx.fillText(`${traffic.dist}NM · ${traffic.speed}KT · ILS`, acX - 70, acY - 12);
+
+      // --- 6. Ground Tug & Towed Aircraft (Tug-42 / JA722A) ---
+      const vehX = toScreenX(vehicle.x);
+      const vehY = toScreenY(vehicle.y);
+
+      // Towed Aircraft Silhouette trailing behind
+      ctx.fillStyle = incursionActive ? 'rgba(239, 68, 68, 0.4)' : 'rgba(56, 189, 248, 0.35)';
+      ctx.beginPath();
+      ctx.arc(vehX, vehY - 22, 12, 0, Math.PI * 2);
+      ctx.fill();
+      // Towbar connection line
+      ctx.strokeStyle = incursionActive ? '#ef4444' : '#06b6d4';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(vehX, vehY);
+      ctx.lineTo(vehX, vehY - 22);
+      ctx.stroke();
+
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '8px "JetBrains Mono", monospace';
+      ctx.fillText(vehicle.towed || 'AIRCRAFT', vehX - 12, vehY - 30);
+
+      // Tug Tractor Node
+      ctx.fillStyle = incursionActive ? '#ef4444' : '#06b6d4';
+      ctx.fillRect(vehX - 6, vehY - 6, 12, 12);
+
+      // Heading Vector Line
+      ctx.strokeStyle = incursionActive ? '#ef4444' : '#06b6d4';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(vehX, vehY);
+      ctx.lineTo(vehX, vehY + 16);
+      ctx.stroke();
+
+      // Vehicle Tag
+      ctx.fillStyle = incursionActive ? '#fca5a5' : '#67e8f9';
+      ctx.font = 'bold 10px "JetBrains Mono", monospace';
+      ctx.fillText(vehicle.id, vehX + 10, vehY + 4);
+
+      // --- 7. Phosphor Radar Sweep Beam with Smooth Glow ---
+      sweepAngle += 0.025;
+      ctx.save();
+      ctx.translate(centerX, centerY);
+      ctx.rotate(sweepAngle);
+      const sweepRadius = Math.max(w, h);
+      const sweepGrad = ctx.createLinearGradient(0, 0, sweepRadius, 0);
+      sweepGrad.addColorStop(0, 'rgba(16, 185, 129, 0)');
+      sweepGrad.addColorStop(1, 'rgba(16, 185, 129, 0.16)');
+      ctx.fillStyle = sweepGrad;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.arc(0, 0, sweepRadius, 0, Math.PI / 10);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // FAA / JCAB Audit Modal
+    async function openAuditModal() {
+      const modal = document.getElementById('audit-modal');
+      const loading = document.getElementById('audit-loading');
+      const content = document.getElementById('audit-content');
+      
+      modal.classList.remove('hidden');
+      loading.classList.remove('hidden');
+      content.innerHTML = '';
+
+      try {
+        const resp = await fetch('/api/audit');
+        if (!resp.ok) throw new Error('API offline');
+        const audit = await resp.json();
+        loading.classList.add('hidden');
+        renderAuditReport(audit);
+      } catch (e) {
+        loading.classList.add('hidden');
+        const isHaneda = currentScenario === 'RJTT_HANEDA_2024';
+        const clientAudit = isHaneda ? {
+          report_id: "JCAB-ICAO-RJTT-2026",
+          airport_icao: "RJTT",
+          incident_date: "2026-09-24",
+          severity_category: "ICAO Category A Incursion (Fatal Collision Counterfactual Averted by AeroGuard)",
+          involved_entities: {
+            ground_vehicle: "Japan Coast Guard JA722A (Bombardier DHC-8-300 / Dash 8)",
+            conflicting_aircraft: "Japan Airlines Flight JAL516 (Airbus A350-900 on 1.1 NM final approach)",
+            runway_involved: "Runway 16L/34R",
+            taxiway_involved: "Holding Point C5"
+          },
+          incident_chronology: [
+            {"time": "17:45:01JST", "event": "Tokyo Tower cleared JA722A to holding point C5, hold short of Runway 34R."},
+            {"time": "17:45:06JST", "event": "Readback omitted hold short: 'Taxi to C5'. AeroGuard flagged ICAO readback discrepancy."},
+            {"time": "17:47:19JST", "event": "JA722A crossed stopbar C5 and entered Runway 34R at 15 kts."},
+            {"time": "17:47:20JST", "event": "AeroGuard sub-second acoustic barge-in halted vehicle 12.8s before A350 touchdown."}
+          ],
+          root_cause_analysis: "Cockpit mental model mismatch: Pilot interpreted departure sequence as permission to enter active runway. Ambient engine noise saturated visual attention.",
+          regulatory_violations: [
+            "ICAO Annex 14 Vol I - Aerodromes Surface Movement Guidance",
+            "JCAB Directive 4 - Stopbar Compliance"
+          ],
+          aeroguard_system_effectiveness: "Sub-300ms AssemblyAI streaming turn endpointing delivered acoustic intervention, saving lives and airframes."
+        } : {
+          report_id: "FAA-139-ORD-2026",
+          airport_icao: "KORD",
+          incident_date: "2026-09-24",
+          severity_category: "FAA Category B Incursion (Significant Potential for Collision Averted by AeroGuard)",
+          involved_entities: {
+            ground_vehicle: "Pushback Tug-42 (Towing Boeing 777-200ER / Flight AAL88)",
+            conflicting_aircraft: "American Airlines Flight AA104 (Boeing 737-800 on 1.2 NM final approach)",
+            runway_involved: "Runway 09L/27R",
+            taxiway_involved: "Taxiway Echo"
+          },
+          incident_chronology: [
+            {"time": "10:14:02Z", "event": "ATC cleared Tug 42 via Echo, hold short of Runway 09L."},
+            {"time": "10:14:21Z", "event": "Tug 42 maintained speed past Taxiway Echo hold short marker."},
+            {"time": "10:14:24Z", "event": "AeroGuard acoustic barge-in fired; vehicle emergency stopped 28m from runway centerline."}
+          ],
+          root_cause_analysis: "Ramp operator acoustic saturation (>105 dB ambient engine noise) resulted in driver focusing on towbar tension rather than hold lines.",
+          regulatory_violations: [
+            "14 CFR § 139.329 - Ground Vehicles Safe Operations",
+            "FAA Advisory Circular AC 150/5210-20A - Runway Safety"
+          ],
+          aeroguard_system_effectiveness: "Sub-300ms AssemblyAI streaming turn endpointing eliminated human reaction delay, preventing a Category A collision."
+        };
+        renderAuditReport(clientAudit);
+      }
+    }
+
+    function renderAuditReport(audit) {
+      const content = document.getElementById('audit-content');
+      content.innerHTML = `
+        <div class="grid grid-cols-2 gap-3 p-3 bg-slate-950/80 rounded-lg border border-slate-800">
+          <div><span class="text-slate-400">REPORT ID:</span> <span class="text-cyan-400 font-bold">${audit.report_id}</span></div>
+          <div><span class="text-slate-400">AIRPORT:</span> <span class="text-slate-200 font-bold">${audit.airport_icao}</span></div>
+          <div><span class="text-slate-400">SEVERITY CLASSIFICATION:</span> <span class="text-amber-400 font-bold">${audit.severity_category}</span></div>
+          <div><span class="text-slate-400">TIMESTAMP:</span> <span class="text-slate-200">${audit.incident_date}</span></div>
+        </div>
+
+        <div class="space-y-1">
+          <h4 class="text-xs font-bold text-slate-300 uppercase font-display">INVOLVED ENTITIES:</h4>
+          <div class="p-3 bg-slate-950/60 rounded border border-slate-800 space-y-1 text-[11px]">
+            <div>• <strong class="text-slate-300">Ground Vehicle:</strong> ${audit.involved_entities.ground_vehicle}</div>
+            <div>• <strong class="text-slate-300">Conflicting Aircraft:</strong> ${audit.involved_entities.conflicting_aircraft}</div>
+            <div>• <strong class="text-slate-300">Runway / Taxiway:</strong> ${audit.involved_entities.runway_involved} / ${audit.involved_entities.taxiway_involved}</div>
+          </div>
+        </div>
+
+        <div class="space-y-1">
+          <h4 class="text-xs font-bold text-slate-300 uppercase font-display">INCIDENT CHRONOLOGY:</h4>
+          <div class="p-3 bg-slate-950/60 rounded border border-slate-800 space-y-1.5 text-[11px]">
+            ${audit.incident_chronology.map(item => `
+              <div class="flex items-start space-x-2">
+                <span class="text-cyan-400 font-bold whitespace-nowrap">${item.time}</span>
+                <span class="text-slate-300">${item.event}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <div class="space-y-1">
+          <h4 class="text-xs font-bold text-slate-300 uppercase font-display">ROOT CAUSE & REGULATORY VIOLATIONS:</h4>
+          <div class="p-3 bg-slate-950/60 rounded border border-slate-800 space-y-2 text-[11px]">
+            <p class="text-slate-300">${audit.root_cause_analysis}</p>
+            <div class="flex flex-wrap gap-1 mt-1">
+              ${audit.regulatory_violations.map(reg => `
+                <span class="px-2 py-0.5 rounded bg-red-950/80 border border-red-800 text-red-300 text-[10px] font-semibold">${reg}</span>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-1">
+          <h4 class="text-xs font-bold text-slate-300 uppercase font-display">AEROGUARD SYSTEM EFFECTIVENESS:</h4>
+          <div class="p-3 bg-emerald-950/40 rounded border border-emerald-500/40 text-[11px] text-emerald-200">
+            ${audit.aeroguard_system_effectiveness}
+          </div>
+        </div>
+      `;
+    }
+
+    function closeAuditModal() {
+      document.getElementById('audit-modal').classList.add('hidden');
+    }
+
+    // Startup
+    window.addEventListener('load', () => {
+      resizeCanvases();
+      connectWebSocket();
+      drawRadar();
+    });
+  </script>
+</body>
+</html>

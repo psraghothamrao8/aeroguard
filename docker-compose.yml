@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  aeroguard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: aeroguard-voice-interceptor
+    ports:
+      - "8000:8000"
+    environment:
+      - ASSEMBLYAI_API_KEY=${ASSEMBLYAI_API_KEY:-mock_assemblyai_dev_key}
+      - HOST=0.0.0.0
+      - PORT=8000
+      - AIRPORT_ICAO=KORD
+      - SAMPLE_RATE=16000
+    env_file:
+      - .env
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
