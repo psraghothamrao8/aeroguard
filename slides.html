@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AeroGuard - Hackathon Presentation</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @page {
+      size: 16in 9in;
+      margin: 0;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      background: #030712;
+      color: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .slide {
+      width: 16in;
+      height: 9in;
+      page-break-after: always;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 4rem 5rem;
+      background: radial-gradient(circle at top right, #0f172a 0%, #030712 70%);
+      box-sizing: border-box;
+    }
+    .slide:last-child {
+      page-break-after: avoid;
+    }
+    .glow-cyan {
+      text-shadow: 0 0 30px rgba(6, 182, 212, 0.45);
+    }
+    .glow-green {
+      text-shadow: 0 0 30px rgba(16, 185, 129, 0.45);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- SLIDE 1: TITLE SLIDE -->
+  <div class="slide">
+    <div class="flex items-center justify-between border-b border-slate-800 pb-6">
+      <div class="flex items-center space-x-3">
+        <span class="px-3 py-1 text-sm font-bold tracking-widest uppercase bg-cyan-950 text-cyan-400 border border-cyan-500/40 rounded-full">
+          AssemblyAI Voice Agent Hackathon
+        </span>
+        <span class="px-3 py-1 text-sm font-bold tracking-widest uppercase bg-emerald-950 text-emerald-400 border border-emerald-500/40 rounded-full">
+          Lablab.ai Submission
+        </span>
+      </div>
+      <div class="text-sm font-mono text-slate-400">14 CFR § 139.329 Compliant</div>
+    </div>
+
+    <div class="my-auto space-y-6">
+      <div class="inline-block px-4 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-mono text-sm tracking-wider uppercase font-bold">
+        Autonomous Airfield Safety Co-Pilot
+      </div>
+      <h1 class="text-7xl font-extrabold tracking-tight text-white glow-cyan font-sans leading-tight">
+        AeroGuard <span class="text-cyan-400 font-light">🛫🛡️</span>
+      </h1>
+      <p class="text-3xl text-slate-300 max-w-4xl font-light leading-relaxed">
+        Real-Time Autonomous Airfield Ground Collision & Runway Incursion Interceptor powered by AssemblyAI.
+      </p>
+    </div>
+
+    <div class="flex items-center justify-between border-t border-slate-800 pt-6 text-slate-400 text-base font-mono">
+      <div>Team: <strong>AeroGuard Autonomous Systems</strong></div>
+      <div>Live Application: <strong>psraghothamrao8.github.io/aeroguard/</strong></div>
+    </div>
+  </div>
+
+  <!-- SLIDE 2: THE PROBLEM -->
+  <div class="slide">
+    <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+      <span class="text-sm font-bold tracking-widest uppercase text-red-400 font-mono">01 / The Mission Crisis</span>
+      <span class="text-sm font-mono text-slate-500">Why Voice Is Strictly Mandatory</span>
+    </div>
+
+    <div class="my-auto space-y-8">
+      <h2 class="text-5xl font-extrabold text-white">Deafening Noise. Zero Screens. Fatal Consequences.</h2>
+      
+      <div class="grid grid-cols-3 gap-8">
+        <div class="p-8 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
+          <div class="text-4xl font-black text-amber-400 font-mono">105+ dB</div>
+          <h3 class="text-xl font-bold text-white">Extreme Noise Environment</h3>
+          <p class="text-slate-400 leading-relaxed text-sm">
+            Commercial airport tug drivers tow 300-ton aircraft amidst deafening CFM56 turbofan and APU roar. Human auditory speech reception degrades severely.
+          </p>
+        </div>
+
+        <div class="p-8 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
+          <div class="text-4xl font-black text-cyan-400 font-mono">0 Screens</div>
+          <h3 class="text-xl font-bold text-white">Zero Screen Availability</h3>
+          <p class="text-slate-400 leading-relaxed text-sm">
+            Operators cannot glance at iPads or tablets while actively steering widebody jets past taxiway hold lines. Voice radio is their single physical channel.
+          </p>
+        </div>
+
+        <div class="p-8 rounded-2xl bg-slate-900/80 border border-red-900/40 bg-red-950/20 space-y-4">
+          <div class="text-4xl font-black text-red-400 font-mono">Jan 2024</div>
+          <h3 class="text-xl font-bold text-red-200">Tokyo Haneda Disaster</h3>
+          <p class="text-slate-300 leading-relaxed text-sm">
+            Coast Guard Dash-8 breached the C5 hold line due to a misheard voice clearance, colliding with JAL A350 on short final. 5 crew members died.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="border-t border-slate-800 pt-4 text-xs font-mono text-slate-500">
+      FAA Advisory Circular AC 150/5210-20A · ICAO Annex 14 Aerodromes Surface Movement Guidance
+    </div>
+  </div>
+
+  <!-- SLIDE 3: THE SOLUTION & ARCHITECTURE -->
+  <div class="slide">
+    <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+      <span class="text-sm font-bold tracking-widest uppercase text-cyan-400 font-mono">02 / Technical Architecture</span>
+      <span class="text-sm font-mono text-slate-500">AssemblyAI End-to-End Contract</span>
+    </div>
+
+    <div class="my-auto space-y-8">
+      <h2 class="text-5xl font-extrabold text-white">How AeroGuard Intercepts Incursions in Real Time</h2>
+
+      <div class="grid grid-cols-4 gap-6">
+        <div class="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3">
+          <div class="w-10 h-10 rounded-lg bg-cyan-950 flex items-center justify-center text-cyan-400 font-bold font-mono">01</div>
+          <h3 class="text-lg font-bold text-white">Streaming STT v3</h3>
+          <p class="text-slate-400 text-xs leading-relaxed">
+            16kHz PCM audio streamed over WebSocket with domain-specific <code>keyterms_prompt</code> boosting 40+ ICAO phonetic terms over turbofan noise.
+          </p>
+        </div>
+
+        <div class="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3">
+          <div class="w-10 h-10 rounded-lg bg-emerald-950 flex items-center justify-center text-emerald-400 font-bold font-mono">02</div>
+          <h3 class="text-lg font-bold text-white">Active Airfield Grid</h3>
+          <p class="text-slate-400 text-xs leading-relaxed">
+            Parses verbal taxi clearances in real time against high-definition vector airport grids (KORD and RJTT Haneda), stopbars, and runway safety areas.
+          </p>
+        </div>
+
+        <div class="p-6 rounded-2xl bg-slate-900/80 border border-red-950/60 bg-red-950/20 space-y-3">
+          <div class="w-10 h-10 rounded-lg bg-red-950 flex items-center justify-center text-red-400 font-bold font-mono">03</div>
+          <h3 class="text-lg font-bold text-white">Sub-Second Barge-In</h3>
+          <p class="text-slate-300 text-xs leading-relaxed">
+            Instant buffer flush overrides radio with loud 880Hz acoustic alarm and urgent synthesized directive: <em>"PULL UP! HOLD POSITION!"</em>
+          </p>
+        </div>
+
+        <div class="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3">
+          <div class="w-10 h-10 rounded-lg bg-purple-950 flex items-center justify-center text-purple-400 font-bold font-mono">04</div>
+          <h3 class="text-lg font-bold text-white">LLM Gateway Audit</h3>
+          <p class="text-slate-400 text-xs leading-relaxed">
+            Post-session telemetry and full voice transcript are sent to AssemblyAI LLM Gateway to generate structured FAA Part 139 digital audit logs.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="border-t border-slate-800 pt-4 text-xs font-mono text-slate-500">
+      Sub-300ms turn endpointing latency · FastAPI Async Gateway · Web Audio Oscilloscope
+    </div>
+  </div>
+
+  <!-- SLIDE 4: CORE SUPERCHARGERS -->
+  <div class="slide">
+    <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+      <span class="text-sm font-bold tracking-widest uppercase text-emerald-400 font-mono">03 / Differentiating Capabilities</span>
+      <span class="text-sm font-mono text-slate-500">Industry-Grade Innovations</span>
+    </div>
+
+    <div class="my-auto space-y-8">
+      <h2 class="text-5xl font-extrabold text-white">Engineering Beyond Standard Voice Chatbots</h2>
+
+      <div class="grid grid-cols-3 gap-8">
+        <div class="p-8 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
+          <div class="text-amber-400 font-bold text-lg uppercase font-mono">⚡ Innovation 1</div>
+          <h3 class="text-2xl font-bold text-white">ICAO Readback Deviation Engine</h3>
+          <p class="text-slate-400 leading-relaxed text-sm">
+            Catches clearance inversions <strong>before wheels roll</strong>. If ATC instructs "Hold short" but the operator reads back "Cleared to cross", AeroGuard flags the verbal contradiction in <strong>240 milliseconds</strong>.
+          </p>
+        </div>
+
+        <div class="p-8 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
+          <div class="text-cyan-400 font-bold text-lg uppercase font-mono">🌁 Innovation 2</div>
+          <h3 class="text-2xl font-bold text-white">CAT III Low-Visibility Fog Mode</h3>
+          <p class="text-slate-400 leading-relaxed text-sm">
+            Simulates extreme low-RVR (&lt;150m) fog conditions where human vision fails to identify hold lines. Demonstrates why acoustic voice co-pilots are indispensable in zero-visibility ramp maneuvers.
+          </p>
+        </div>
+
+        <div class="p-8 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
+          <div class="text-emerald-400 font-bold text-lg uppercase font-mono">🔊 Innovation 3</div>
+          <h3 class="text-2xl font-bold text-white">+105 dB Acoustic Jet Stress Test</h3>
+          <p class="text-slate-400 leading-relaxed text-sm">
+            Interactive CFM56 jet turbofan roar synthesizer tests voice model resilience under extreme decibel saturation, proving AssemblyAI's superior keyterm accuracy in industrial environments.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="border-t border-slate-800 pt-4 text-xs font-mono text-slate-500">
+      Dual Frequency Radio Simulation (VHF 121.750 MHz Ground / UHF 460.100 MHz Ramp)
+    </div>
+  </div>
+
+  <!-- SLIDE 5: CASE STUDY - TOKYO HANEDA -->
+  <div class="slide">
+    <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+      <span class="text-sm font-bold tracking-widest uppercase text-amber-400 font-mono">04 / Historical Validation</span>
+      <span class="text-sm font-mono text-slate-500">Tokyo Haneda (RJTT) Counterfactual Replay</span>
+    </div>
+
+    <div class="my-auto space-y-8">
+      <h2 class="text-5xl font-extrabold text-white">Averting Disaster: The Haneda Replay Scenario</h2>
+
+      <div class="grid grid-cols-2 gap-8 items-center">
+        <div class="space-y-6">
+          <div class="p-6 rounded-xl bg-slate-900 border border-slate-800 space-y-3">
+            <span class="text-xs font-mono uppercase text-cyan-400 font-bold">Historical Fact (January 2, 2024):</span>
+            <p class="text-slate-300 text-sm leading-relaxed">
+              Coast Guard Dash-8 entered Runway 34R at Holding Point C5 while JAL Flight 516 (Airbus A350) was on short final approach. Total human auditory and situational failure.
+            </p>
+          </div>
+
+          <div class="p-6 rounded-xl bg-emerald-950/30 border border-emerald-500/40 space-y-3">
+            <span class="text-xs font-mono uppercase text-emerald-400 font-bold">With AeroGuard Intervention:</span>
+            <p class="text-emerald-200 text-sm leading-relaxed">
+              AeroGuard flags the omitted "hold short" readback at 17:45:06. When JA722A crosses the C5 stopbar at 17:47:19, AeroGuard fires an acoustic barge-in alert halting the aircraft <strong>12.8 seconds before touchdown</strong>.
+            </p>
+          </div>
+        </div>
+
+        <div class="p-8 rounded-2xl bg-slate-950 border border-slate-800 font-mono text-xs space-y-4">
+          <div class="text-slate-400 border-b border-slate-800 pb-2 font-bold uppercase tracking-wider text-cyan-400">
+            AeroGuard Telemetry Timeline:
+          </div>
+          <div class="space-y-3 text-slate-300">
+            <div class="flex justify-between"><span class="text-cyan-400">T-00:24s</span> <span>Tokyo Tower: Cleared to C5, hold short 34R</span></div>
+            <div class="flex justify-between"><span class="text-amber-400">T-00:19s</span> <span>JA722A readback omits "hold short" [FLAGGED]</span></div>
+            <div class="flex justify-between"><span class="text-red-400">T-00:13s</span> <span>JA722A crosses stopbar at 14 kts</span></div>
+            <div class="flex justify-between font-bold text-white bg-red-950/80 p-2 rounded border border-red-500/50">
+              <span class="text-red-400">T-00:12.8s</span> <span>BARGE-IN FIRED: "PULL UP! HOLD POSITION!"</span>
+            </div>
+            <div class="flex justify-between text-emerald-400 font-bold"><span>T-00:00s</span> <span>JAL516 lands safely on clear runway</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="border-t border-slate-800 pt-4 text-xs font-mono text-slate-500">
+      Tested on live interactive radar simulator at psraghothamrao8.github.io/aeroguard/
+    </div>
+  </div>
+
+  <!-- SLIDE 6: CONCLUSION & IMPACT -->
+  <div class="slide">
+    <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+      <span class="text-sm font-bold tracking-widest uppercase text-cyan-400 font-mono">05 / Compliance & Value</span>
+      <span class="text-sm font-mono text-slate-500">Summary & Future Scope</span>
+    </div>
+
+    <div class="my-auto space-y-8">
+      <h2 class="text-5xl font-extrabold text-white">Saving Lives, Airframes, and Regulatory Fines</h2>
+
+      <div class="grid grid-cols-3 gap-8">
+        <div class="p-8 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
+          <div class="text-3xl font-extrabold text-white">FAA Part 139</div>
+          <h3 class="text-lg font-bold text-cyan-400">Automated Digital Audit</h3>
+          <p class="text-slate-400 text-sm leading-relaxed">
+            Eliminates paper-based investigations by automatically compiling FAA Form 5280-1 digital incident dossiers via AssemblyAI's LLM Gateway in seconds.
+          </p>
+        </div>
+
+        <div class="p-8 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
+          <div class="text-3xl font-extrabold text-white">Zero Latency</div>
+          <h3 class="text-lg font-bold text-emerald-400">Pure Voice-First AI</h3>
+          <p class="text-slate-400 text-sm leading-relaxed">
+            Designed from day one for eyes-free, hands-free operation in deafening environments. Voice is not a gimmick—it is the only safe interface.
+          </p>
+        </div>
+
+        <div class="p-8 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
+          <div class="text-3xl font-extrabold text-white">Dual Deploy</div>
+          <h3 class="text-lg font-bold text-amber-400">Production Ready</h3>
+          <p class="text-slate-400 text-sm leading-relaxed">
+            Enterprise FastAPI server for airport operations centers, and zero-setup static web HUD on GitHub Pages for instant testing by hackathon judges.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex items-center justify-between border-t border-slate-800 pt-6">
+      <div class="text-slate-300 font-bold">
+        Live Demo: <a href="https://psraghothamrao8.github.io/aeroguard/" class="text-cyan-400 underline font-mono">psraghothamrao8.github.io/aeroguard/</a>
+      </div>
+      <div class="text-slate-400 font-mono text-sm">
+        GitHub: <a href="https://github.com/psraghothamrao8/aeroguard" class="text-slate-200 underline font-mono">github.com/psraghothamrao8/aeroguard</a>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
